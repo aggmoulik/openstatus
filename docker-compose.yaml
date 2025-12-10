@@ -50,16 +50,14 @@ services:
     # Internal Services
     workflows:
         container_name: openstatus-workflows
-        build:
-            context: .
-            dockerfile: apps/workflows/Dockerfile
-        image: openstatus/workflows:latest
+        # build:
+        #     context: .
+        #     dockerfile: apps/workflows/Dockerfile
+        image: c1ph3rx/op-workflows:latest
         networks:
             - openstatus
         ports:
             - "3000:3000"
-        env_file:
-            - .env.docker
         environment:
             - DATABASE_URL=http://libsql:8080
             - PORT=3000
@@ -76,16 +74,14 @@ services:
 
     server:
         container_name: openstatus-server
-        build:
-            context: .
-            dockerfile: apps/server/Dockerfile
-        image: openstatus/server:latest
+        # build:
+        #     context: .
+        #     dockerfile: apps/server/Dockerfile
+        image: c1ph3rx/op-server:latest
         networks:
             - openstatus
         ports:
             - "3001:3000"
-        env_file:
-            - .env.docker
         environment:
             - DATABASE_URL=http://libsql:8080
             - PORT=3000
@@ -102,16 +98,14 @@ services:
 
     private-location:
         container_name: openstatus-private-location
-        build:
-            context: apps/private-location
-            dockerfile: Dockerfile
-        image: openstatus/private-location:latest
+        # build:
+        #     context: apps/private-location
+        #     dockerfile: Dockerfile
+        image: ghcr.io/openstatushq/private-location:latest
         networks:
             - openstatus
         ports:
             - "8081:8080"
-        env_file:
-            - .env.docker
         environment:
             - DB_URL=http://libsql:8080
             - TINYBIRD_URL=http://tinybird-local:7181
@@ -133,13 +127,11 @@ services:
         build:
             context: .
             dockerfile: apps/dashboard/Dockerfile
-        image: openstatus/dashboard:latest
+        image: c1ph3rx/op-dashboard:latest
         networks:
             - openstatus
         ports:
             - "3002:3000"
-        env_file:
-            - .env.docker
         environment:
             - DATABASE_URL=http://libsql:8080
             - PORT=3000
@@ -168,8 +160,6 @@ services:
             - openstatus
         ports:
             - "3003:3000"
-        env_file:
-            - .env.docker
         environment:
             - DATABASE_URL=http://libsql:8080
             - PORT=3000
