@@ -1,0 +1,160 @@
+name: Test Docker Images
+
+on:
+  workflow_run:
+    workflows: ["Build and Publish Docker Images"]
+    types:
+      - completed
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Image tag to test (e.g., main, v1.0.0, sha-abc123)'
+        required: false
+        default: 'main'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_OWNER: aggmoulik
+
+jobs:
+  test-docker-compose:
+    name: Test Docker Compose Stack
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Determine image tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "tag=${{ github.event.inputs.image_tag }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref_type }}" == "tag" ]; then
+            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${GITHUB_REF#refs/heads/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create test environment file
+        run: |
+          cat > .env.docker << EOF
+          # Required variables for testing
+          AUTH_SECRET=test-secret-min-32-chars-long-for-testing
+          DATABASE_URL=http://libsql:8080
+          DATABASE_AUTH_TOKEN=test
+          RESEND_API_KEY=test
+          
+          # Optional services (using test values)
+          UPSTASH_REDIS_REST_URL=test
+          UPSTASH_REDIS_REST_TOKEN=test
+          TINY_BIRD_API_KEY=test
+          CRON_SECRET=test
+          PROJECT_ID_VERCEL=test
+          TEAM_ID_VERCEL=test
+          VERCEL_AUTH_BEARER_TOKEN=test
+          STRIPE_SECRET_KEY=test
+          UNKEY_TOKEN=test
+          UNKEY_API_ID=test
+          OPENPANEL_CLIENT_SECRET=test
+          NEXT_PUBLIC_OPENPANEL_CLIENT_ID=test
+          NEXT_PUBLIC_URL=http://localhost:3002
+          SELF_HOST=true
+          EOF
+
+      - name: Pull Docker images
+        run: |
+          TAG="${{ steps.tag.outputs.tag }}"
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/openstatus-dashboard:${TAG}
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/openstatus-server:${TAG}
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/openstatus-workflows:${TAG}
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/openstatus-status-page:${TAG}
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/openstatus-private-location:${TAG}
+
+      - name: Start external services (database, tinybird)
+        run: |
+          docker compose up -d libsql tinybird-local
+          echo "Waiting for services to be healthy..."
+          sleep 20
+
+      - name: Check external services health
+        run: |
+          docker compose ps
+          # Check if libsql is healthy
+          if ! docker compose ps libsql | grep -q "healthy"; then
+            echo "LibSQL is not healthy"
+            docker compose logs libsql
+            exit 1
+          fi
+
+      - name: Start OpenStatus services with pulled images
+        run: |
+          TAG="${{ steps.tag.outputs.tag }}"
+          # Override image tags in docker-compose
+          export WORKFLOWS_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/openstatus-workflows:${TAG}"
+          export SERVER_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/openstatus-server:${TAG}"
+          export PRIVATE_LOCATION_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/openstatus-private-location:${TAG}"
+          export DASHBOARD_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/openstatus-dashboard:${TAG}"
+          export STATUS_PAGE_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_OWNER }}/openstatus-status-page:${TAG}"
+          
+          # Start services
+          docker compose up -d workflows server private-location dashboard status-page
+
+      - name: Wait for services to start
+        run: |
+          echo "Waiting for services to be ready..."
+          sleep 45
+
+      - name: Check services health
+        run: |
+          docker compose ps
+          
+          # Check if all services are running
+          SERVICES="workflows server private-location dashboard status-page"
+          for service in $SERVICES; do
+            if ! docker compose ps $service | grep -q "Up"; then
+              echo "Service $service is not running"
+              docker compose logs $service
+              exit 1
+            fi
+          done
+
+      - name: Run smoke tests
+        run: |
+          echo "Testing server health endpoint..."
+          curl -f http://localhost:3001/ping || (echo "Server health check failed" && exit 1)
+          
+          echo "Testing workflows health endpoint..."
+          curl -f http://localhost:3000/ping || (echo "Workflows health check failed" && exit 1)
+          
+          echo "Testing private-location health endpoint..."
+          curl -f http://localhost:8081/health || (echo "Private location health check failed" && exit 1)
+          
+          echo "Testing dashboard accessibility..."
+          curl -f http://localhost:3002/ || (echo "Dashboard accessibility check failed" && exit 1)
+          
+          echo "Testing status-page accessibility..."
+          curl -f http://localhost:3003/ || (echo "Status page accessibility check failed" && exit 1)
+          
+          echo "All smoke tests passed!"
+
+      - name: Show container logs on failure
+        if: failure()
+        run: |
+          echo "=== Workflows Logs ==="
+          docker compose logs workflows
+          echo "=== Server Logs ==="
+          docker compose logs server
+          echo "=== Private Location Logs ==="
+          docker compose logs private-location
+          echo "=== Dashboard Logs ==="
+          docker compose logs dashboard
+          echo "=== Status Page Logs ==="
+          docker compose logs status-page
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker compose down -v
+

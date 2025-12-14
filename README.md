@@ -81,13 +81,39 @@ Made with [Contrib.rocks](https://contrib.rocks)
 
 ### With Docker (Recommended)
 
-The fastest way to get started for both development and self-hosting:
+Two deployment options available:
+
+#### Option 1: Pre-built Images (Fastest - Production Ready)
+
+No build time required, pull pre-built images from GitHub Container Registry:
 
 ```sh
 # 1. Copy environment file
 cp .env.docker.example .env.docker
 
-# 2. Start all services
+# 2. Pull and start services (using pre-built images)
+docker compose -f docker-compose.prod.yaml pull
+docker compose -f docker-compose.prod.yaml up -d
+
+# 3. Run migrations
+cd packages/db && pnpm migrate
+
+# 4. Access the application
+open http://localhost:3002  # Dashboard
+open http://localhost:3003  # Status Pages
+```
+
+📖 **Production guide**: [DOCKER_PRODUCTION.md](DOCKER_PRODUCTION.md)
+
+#### Option 2: Build from Source (Local Development)
+
+Build images locally for development:
+
+```sh
+# 1. Copy environment file
+cp .env.docker.example .env.docker
+
+# 2. Build and start all services
 docker compose up -d
 
 # 3. Access the application
@@ -95,7 +121,7 @@ open http://localhost:3002  # Dashboard
 open http://localhost:3003  # Status Pages
 ```
 
-📖 **Full guide**: [DOCKER.md](DOCKER.md) | **Production deployment**: [DOCKER_PRODUCTION.md](DOCKER_PRODUCTION.md)
+📖 **Development guide**: [DOCKER.md](DOCKER.md)
 
 ### With Devbox
 

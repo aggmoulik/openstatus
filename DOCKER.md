@@ -2,7 +2,46 @@
 
 Complete guide for running OpenStatus with Docker
 
-## Quick Start
+## Deployment Options
+
+OpenStatus can be deployed in two ways:
+
+1. **Production/Self-Hosting** (Recommended) - Use pre-built images from GHCR
+   - ✅ No build time required (save 15-30 minutes)
+   - ✅ Faster updates with `docker compose pull`
+   - ✅ Tested images from CI/CD
+   - 📖 See: [DOCKER_PRODUCTION.md](DOCKER_PRODUCTION.md)
+
+2. **Local Development** - Build from source
+   - 🔧 Make code changes and test locally
+   - 🔧 Full control over build process
+   - 📖 Continue below for setup
+
+## Quick Start - Production (Pre-built Images)
+
+```bash
+# 1. Copy environment file
+cp .env.docker.example .env.docker
+
+# 2. Configure required variables (see Configuration section)
+vim .env.docker
+
+# 3. Pull and start services
+docker compose -f docker-compose.prod.yaml pull
+docker compose -f docker-compose.prod.yaml up -d
+
+# 4. Run database migrations (required)
+cd packages/db
+pnpm migrate
+
+# 5. Access the application
+open http://localhost:3002  # Dashboard
+open http://localhost:3003  # Status Pages
+```
+
+📖 **Full production guide**: [DOCKER_PRODUCTION.md](DOCKER_PRODUCTION.md)
+
+## Quick Start - Local Development
 
 ```bash
 # 1. Copy environment file
@@ -62,6 +101,58 @@ docker builder prune
 | libsql | 5001 | Database (gRPC) |
 | tinybird-local | 7181 | Analytics |
 
+
+## Pre-built Docker Images
+
+Pre-built images are automatically built and published via CI/CD to GitHub Container Registry.
+
+### Available Images
+
+All images are available at `ghcr.io/aggmoulik/openstatus-*`:
+
+| Component | Image | Size |
+|-----------|-------|------|
+| Dashboard | `ghcr.io/aggmoulik/openstatus-dashboard` | ~500MB |
+| Server | `ghcr.io/aggmoulik/openstatus-server` | ~100MB |
+| Workflows | `ghcr.io/aggmoulik/openstatus-workflows` | ~150MB |
+| Status Page | `ghcr.io/aggmoulik/openstatus-status-page` | ~500MB |
+| Private Location | `ghcr.io/aggmoulik/openstatus-private-location` | ~30MB |
+
+### Image Tags
+
+```bash
+# Latest stable release
+:latest
+
+# Specific version (recommended for production)
+:v1.2.3
+:v1.2
+:v1
+
+# Development branches
+:main
+:feature-branch
+
+# Commit SHA
+:sha-abc1234
+```
+
+### Using Pre-built Images
+
+**Quick update workflow:**
+
+```bash
+# Pull latest images
+docker compose -f docker-compose.prod.yaml pull
+
+# Restart services
+docker compose -f docker-compose.prod.yaml up -d
+
+# Verify health
+docker compose -f docker-compose.prod.yaml ps
+```
+
+📖 **Production deployment guide**: [DOCKER_PRODUCTION.md](DOCKER_PRODUCTION.md)
 
 ## Architecture
 
@@ -184,6 +275,8 @@ See [.env.docker.example](.env.docker.example) for complete list.
 
 ### Common Commands
 
+**For local development (building from source):**
+
 ```bash
 # View logs
 docker compose logs -f [service-name]
@@ -201,6 +294,22 @@ docker compose down
 docker compose down -v
 # After resetting, re-run migrations:
 # cd packages/db && pnpm migrate
+```
+
+**For production (using pre-built images):**
+
+```bash
+# Update to latest images
+docker compose -f docker-compose.prod.yaml pull
+
+# Restart services with new images
+docker compose -f docker-compose.prod.yaml up -d
+
+# View logs
+docker compose -f docker-compose.prod.yaml logs -f [service-name]
+
+# Stop all services
+docker compose -f docker-compose.prod.yaml down
 ```
 
 ### Authentication

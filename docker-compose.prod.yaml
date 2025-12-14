@@ -1,16 +1,3 @@
-# OpenStatus Docker Compose Configuration
-#
-# This file is designed for LOCAL DEVELOPMENT with local builds.
-#
-# For PRODUCTION/SELF-HOSTING with pre-built images:
-#   Use: docker-compose.prod.yaml
-#   Run: docker compose -f docker-compose.prod.yaml up -d
-#
-# For local development:
-#   Run: docker compose up -d
-#
-# Pre-built images are available at: ghcr.io/aggmoulik/openstatus-*
-
 networks:
     openstatus:
         driver: bridge
@@ -60,21 +47,10 @@ services:
             start_period: 20s
         restart: unless-stopped
 
-    # OpenStatus Services
-    # Note: Each service can use either:
-    #   - 'build:' for local development (builds from source)
-    #   - 'image:' for production (uses pre-built GHCR images)
-    # See docker-compose.prod.yaml for production configuration
-    
+    # OpenStatus Services - Using pre-built images from GHCR
     workflows:
         container_name: openstatus-workflows
-        # Local development: build from source
-        build:
-            context: .
-            dockerfile: apps/workflows/Dockerfile
-        image: openstatus/workflows:latest
-        # Production alternative (comment out build section above):
-        # image: ghcr.io/aggmoulik/openstatus-workflows:latest
+        image: ghcr.io/aggmoulik/openstatus-workflows:latest
         networks:
             - openstatus
         ports:
@@ -97,12 +73,7 @@ services:
 
     server:
         container_name: openstatus-server
-        # Local development: build from source
-        build:
-            context: .
-            dockerfile: apps/server/Dockerfile
-        image: openstatus/server:latest
-        # Production alternative: image: ghcr.io/aggmoulik/openstatus-server:latest
+        image: ghcr.io/aggmoulik/openstatus-server:latest
         networks:
             - openstatus
         ports:
@@ -125,12 +96,7 @@ services:
 
     private-location:
         container_name: openstatus-private-location
-        # Local development: build from source
-        build:
-            context: apps/private-location
-            dockerfile: Dockerfile
-        image: openstatus/private-location:latest
-        # Production alternative: image: ghcr.io/aggmoulik/openstatus-private-location:latest
+        image: ghcr.io/aggmoulik/openstatus-private-location:latest
         networks:
             - openstatus
         ports:
@@ -155,12 +121,7 @@ services:
 
     dashboard:
         container_name: openstatus-dashboard
-        # Local development: build from source
-        build:
-            context: .
-            dockerfile: apps/dashboard/Dockerfile
-        image: openstatus/dashboard:latest
-        # Production alternative: image: ghcr.io/aggmoulik/openstatus-dashboard:latest
+        image: ghcr.io/aggmoulik/openstatus-dashboard:latest
         networks:
             - openstatus
         ports:
@@ -187,12 +148,7 @@ services:
 
     status-page:
         container_name: openstatus-status-page
-        # Local development: build from source
-        build:
-            context: .
-            dockerfile: apps/status-page/Dockerfile
-        image: openstatus/status-page:latest
-        # Production alternative: image: ghcr.io/aggmoulik/openstatus-status-page:latest
+        image: ghcr.io/aggmoulik/openstatus-status-page:latest
         networks:
             - openstatus
         ports:
@@ -216,3 +172,4 @@ services:
             retries: 3
             start_period: 45s
         restart: unless-stopped
+
