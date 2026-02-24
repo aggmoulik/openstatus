@@ -113,7 +113,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: full-stack/api/Dockerfile
+      dockerfile: apps/server/Dockerfile
     container_name: openstatus-api
     networks:
       - openstatus
@@ -144,7 +144,7 @@ services:
   dashboard:
     build:
       context: .
-      dockerfile: full-stack/dashboard/Dockerfile
+      dockerfile: apps/dashboard/Dockerfile
     container_name: openstatus-dashboard
     networks:
       - openstatus
@@ -176,7 +176,7 @@ services:
   status-page:
     build:
       context: .
-      dockerfile: full-stack/status-page/Dockerfile
+      dockerfile: apps/status-page/Dockerfile
     container_name: openstatus-status-page
     networks:
       - openstatus
@@ -208,7 +208,7 @@ services:
   workflows:
     build:
       context: .
-      dockerfile: full-stack/workflows/Dockerfile
+      dockerfile: apps/workflows/Dockerfile
     container_name: openstatus-workflows
     networks:
       - openstatus

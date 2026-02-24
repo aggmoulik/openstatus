@@ -105,6 +105,33 @@ open http://localhost:3003  # Status Pages
 
 📖 **Full guide**: [DOCKER.md](DOCKER.md)
 
+## One-Click Deployment ☁️
+
+Deploy OpenStatus instantly to your favorite cloud platform:
+
+### Full Stack (Complete Monitoring)
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/openstatushq/openstatus)
+
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.com/new/github?repo=https://github.com/openstatushq/openstatus)
+
+### Lightweight (Status Page Only)
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/openstatushq/openstatus&env=DEPLOYMENT_TYPE=lightweight)
+
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.com/new/github?repo=https://github.com/openstatushq/openstatus&env=DEPLOYMENT_TYPE=lightweight)
+
+> **What's the difference?**
+> - **Full Stack**: Complete synthetic monitoring with automated checks, alerts, and analytics
+> - **Lightweight**: Status page and dashboard only (manual incident management)
+> 
+> **🚨 Railway Setup**: After clicking the Railway button, you'll need to:
+> 1. Select the `railway.toml` configuration file
+> 2. Choose between full-stack or lightweight deployment
+> 3. Configure environment variables (we'll guide you through this)
+
+📖 **Detailed deployment guides**: [deployments/README.md](deployments/README.md)
+
 ### With Devbox
 
 You can use [Devbox](https://www.jetify.com/devbox/) and get started with the following commands:

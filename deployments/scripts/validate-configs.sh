@@ -108,6 +108,17 @@ check_dockerfile_references() {
                     fi
                 fi
             done
+            
+            # Also check for any dockerfilePath references
+            if grep -q "dockerfilePath" "$config_file"; then
+                echo "  Checking dockerfilePath references..."
+                grep "dockerfilePath" "$config_file" | while read -r line; do
+                    dockerfile_path=$(echo "$line" | sed 's/.*dockerfilePath: *//' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+                    if [ "$dockerfile_path" != "./Dockerfile" ]; then
+                        echo -e "    ${YELLOW}⚠️${NC} Non-standard dockerfilePath: $dockerfile_path (should be ./Dockerfile)"
+                    fi
+                done
+            fi
             ;;
         "Railway")
             # Check for Dockerfile references in railway.toml
@@ -141,16 +152,6 @@ if [ $? -eq 0 ]; then
     check_dockerfile_references "deployments/render/render.yaml" "Render"
 fi
 
-# Validate Render Dockerfiles
-echo ""
-echo "🐳 Render Dockerfiles"
-echo "===================="
-validate_dockerfile_exists "deployments/render/full-stack/api/Dockerfile" "Render API Dockerfile"
-validate_dockerfile_exists "deployments/render/full-stack/dashboard/Dockerfile" "Render Dashboard Dockerfile"
-validate_dockerfile_exists "deployments/render/full-stack/status-page/Dockerfile" "Render Status Page Dockerfile"
-validate_dockerfile_exists "deployments/render/full-stack/workflows/Dockerfile" "Render Workflows Dockerfile"
-validate_dockerfile_exists "deployments/render/lightweight/app/Dockerfile" "Render Lightweight Dockerfile"
-
 # Validate Render documentation
 echo ""
 echo "📚 Render Documentation"
@@ -176,20 +177,21 @@ if [ $? -eq 0 ]; then
     validate_yaml_syntax "deployments/railway/docker-compose.railway.yaml" "Railway Docker Compose"
 fi
 
-# Validate Railway Dockerfiles
+# Validate existing Dockerfiles (check apps/ directory instead)
 echo ""
-echo "🐳 Railway Dockerfiles"
-echo "====================="
+echo "🐳 Application Dockerfiles"
+echo "=========================="
+validate_dockerfile_exists "apps/server/Dockerfile" "Server Dockerfile"
+validate_dockerfile_exists "apps/dashboard/Dockerfile" "Dashboard Dockerfile"
+validate_dockerfile_exists "apps/status-page/Dockerfile" "Status Page Dockerfile"
+validate_dockerfile_exists "apps/workflows/Dockerfile" "Workflows Dockerfile"
+
+# Validate Railway-specific database and Redis Dockerfiles
+echo ""
+echo "🐳 Railway Infrastructure Dockerfiles"
+echo "===================================="
 validate_dockerfile_exists "deployments/railway/full-stack/database/Dockerfile" "Railway Database Dockerfile"
 validate_dockerfile_exists "deployments/railway/full-stack/redis/Dockerfile" "Railway Redis Dockerfile"
-validate_dockerfile_exists "deployments/railway/full-stack/api/Dockerfile" "Railway API Dockerfile"
-validate_dockerfile_exists "deployments/railway/full-stack/dashboard/Dockerfile" "Railway Dashboard Dockerfile"
-validate_dockerfile_exists "deployments/railway/full-stack/status-page/Dockerfile" "Railway Status Page Dockerfile"
-validate_dockerfile_exists "deployments/railway/full-stack/workflows/Dockerfile" "Railway Workflows Dockerfile"
-
-# Validate Railway lightweight Dockerfiles
-validate_dockerfile_exists "deployments/railway/lightweight/dashboard/Dockerfile" "Railway Lightweight Dashboard Dockerfile"
-validate_dockerfile_exists "deployments/railway/lightweight/status-page/Dockerfile" "Railway Lightweight Status Page Dockerfile"
 
 # Validate Railway documentation
 echo ""

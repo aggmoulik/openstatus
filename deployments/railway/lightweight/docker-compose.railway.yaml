@@ -60,7 +60,7 @@ services:
         container_name: openstatus-dashboard
         build:
             context: .
-            dockerfile: deployments/railway/lightweight/dashboard/Dockerfile
+            dockerfile: apps/dashboard/Dockerfile
         image: openstatus/dashboard:latest
         networks:
             - openstatus
@@ -91,7 +91,7 @@ services:
         container_name: openstatus-status-page
         build:
             context: .
-            dockerfile: deployments/railway/lightweight/status-page/Dockerfile
+            dockerfile: apps/status-page/Dockerfile
         image: openstatus/status-page:latest
         networks:
             - openstatus

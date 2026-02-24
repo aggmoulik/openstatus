@@ -2,6 +2,13 @@
 
 This directory contains deployment templates for deploying OpenStatus on various platforms and environments.
 
+## 🚀 One-Click Deployment
+
+For the fastest deployment experience, use our one-click deployment buttons in the main [README.md](../README.md#one-click-deployment-):
+
+- **Render**: Fully automated deployment with free tier
+- **Railway**: Quick GitHub import with guided setup
+
 ## Quick Start
 
 Choose your deployment platform:

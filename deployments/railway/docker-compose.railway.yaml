@@ -60,7 +60,7 @@ services:
         container_name: openstatus-server
         build:
             context: .
-            dockerfile: deployments/railway/full-stack/api/Dockerfile
+            dockerfile: apps/server/Dockerfile
         image: openstatus/server:latest
         networks:
             - openstatus
@@ -89,7 +89,7 @@ services:
         container_name: openstatus-dashboard
         build:
             context: .
-            dockerfile: deployments/railway/full-stack/dashboard/Dockerfile
+            dockerfile: apps/dashboard/Dockerfile
         image: openstatus/dashboard:latest
         networks:
             - openstatus
@@ -120,7 +120,7 @@ services:
         container_name: openstatus-status-page
         build:
             context: .
-            dockerfile: deployments/railway/full-stack/status-page/Dockerfile
+            dockerfile: apps/status-page/Dockerfile
         image: openstatus/status-page:latest
         networks:
             - openstatus
@@ -151,7 +151,7 @@ services:
         container_name: openstatus-workflows
         build:
             context: .
-            dockerfile: deployments/railway/full-stack/workflows/Dockerfile
+            dockerfile: apps/workflows/Dockerfile
         image: openstatus/workflows:latest
         networks:
             - openstatus

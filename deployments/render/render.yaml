@@ -37,7 +37,7 @@ services:
     name: openstatus-api
     env: docker
     repo: https://github.com/openstatushq/openstatus.git
-    rootDir: deployments/render/full-stack/api
+    rootDir: apps/server
     dockerfilePath: ./Dockerfile
     healthCheck:
       path: /ping
@@ -63,7 +63,7 @@ services:
     name: openstatus-workflows
     env: docker
     repo: https://github.com/openstatushq/openstatus.git
-    rootDir: deployments/render/full-stack/workflows
+    rootDir: apps/workflows
     dockerfilePath: ./Dockerfile
     envVars:
       - key: DATABASE_URL
@@ -83,7 +83,7 @@ services:
     name: openstatus-dashboard
     env: docker
     repo: https://github.com/openstatushq/openstatus.git
-    rootDir: deployments/render/full-stack/dashboard
+    rootDir: apps/dashboard
     dockerfilePath: ./Dockerfile
     healthCheck:
       path: /
@@ -107,7 +107,7 @@ services:
     name: openstatus-status-page
     env: docker
     repo: https://github.com/openstatushq/openstatus.git
-    rootDir: deployments/render/full-stack/status-page
+    rootDir: apps/status-page
     dockerfilePath: ./Dockerfile
     healthCheck:
       path: /
