@@ -7,8 +7,6 @@ services:
     name: openstatus-db
     env: docker
     image: postgres:15-alpine
-    healthCheck:
-      path: /health
     envVars:
       - key: POSTGRES_DB
         value: openstatus
@@ -26,8 +24,6 @@ services:
     name: openstatus-redis
     env: docker
     image: redis:7-alpine
-    healthCheck:
-      path: /health
     envVars:
       - key: REDIS_PASSWORD
         generateValue: true
@@ -39,8 +35,6 @@ services:
     repo: https://github.com/openstatushq/openstatus.git
     rootDir: apps/server
     dockerfilePath: ./Dockerfile
-    healthCheck:
-      path: /ping
     envVars:
       - key: DATABASE_URL
         value: postgresql://openstatus:${openstatus-db.POSTGRES_PASSWORD}@openstatus-db:5432/openstatus
@@ -54,9 +48,6 @@ services:
         generateValue: true
       - key: SELF_HOST
         value: "true"
-    dependsOn:
-      - openstatus-db
-      - openstatus-redis
 
   # Background Workflows
   - type: worker
@@ -74,9 +65,6 @@ services:
         value: 3000
       - key: NODE_ENV
         value: production
-    dependsOn:
-      - openstatus-db
-      - openstatus-redis
 
   # Dashboard Web App
   - type: web
@@ -85,8 +73,6 @@ services:
     repo: https://github.com/openstatushq/openstatus.git
     rootDir: apps/dashboard
     dockerfilePath: ./Dockerfile
-    healthCheck:
-      path: /
     envVars:
       - key: DATABASE_URL
         value: postgresql://openstatus:${openstatus-db.POSTGRES_PASSWORD}@openstatus-db:5432/openstatus
@@ -98,9 +84,6 @@ services:
         value: production
       - key: AUTH_SECRET
         sync: false
-    dependsOn:
-      - openstatus-api
-      - openstatus-db
 
   # Status Page Web App
   - type: web
@@ -109,8 +92,6 @@ services:
     repo: https://github.com/openstatushq/openstatus.git
     rootDir: apps/status-page
     dockerfilePath: ./Dockerfile
-    healthCheck:
-      path: /
     envVars:
       - key: DATABASE_URL
         value: postgresql://openstatus:${openstatus-db.POSTGRES_PASSWORD}@openstatus-db:5432/openstatus
@@ -122,6 +103,3 @@ services:
         value: production
       - key: AUTH_SECRET
         sync: false
-    dependsOn:
-      - openstatus-api
-      - openstatus-db

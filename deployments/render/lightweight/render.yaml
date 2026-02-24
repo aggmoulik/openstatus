@@ -7,8 +7,6 @@ services:
     name: openstatus-db
     env: docker
     image: postgres:15-alpine
-    healthCheck:
-      path: /health
     envVars:
       - key: POSTGRES_DB
         value: openstatus
@@ -28,8 +26,6 @@ services:
     repo: https://github.com/openstatushq/openstatus.git
     rootDir: apps/dashboard
     dockerfilePath: ./Dockerfile
-    healthCheck:
-      path: /
     envVars:
       - key: DATABASE_URL
         value: postgresql://openstatus:${openstatus-db.POSTGRES_PASSWORD}@openstatus-db:5432/openstatus
@@ -45,5 +41,3 @@ services:
         value: "true"
       - key: RESEND_API_KEY
         sync: false
-    dependsOn:
-      - openstatus-db

@@ -17,13 +17,13 @@ Perfect for:
 
 ## Quick Start
 
-1. **Fork the Repository**
+1. **One-Click Deployment**
    ```bash
-   git clone https://github.com/your-username/openstatus.git
-   cd openstatus
+   # Click the Render button in main README
+   https://render.com/deploy?repo=https://github.com/openstatushq/openstatus&env=DEPLOYMENT_TYPE=lightweight
    ```
 
-2. **Deploy to Render**
+2. **Manual Setup**
    - Go to [Render Dashboard](https://dashboard.render.com)
    - Click "New +" → "Web Service"
    - Connect your forked repository

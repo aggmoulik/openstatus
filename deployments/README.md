@@ -19,7 +19,8 @@ Choose your deployment platform:
 - **Full Stack**: Complete OpenStatus with monitoring
 - **Lightweight**: Status page and dashboard only
 - ✅ Free tier available
-- ✅ Automatic SSL
+- ✅ Automatic SSL and health checks
+- ✅ Blueprint-based deployment (fixed validation issues)
 - ✅ Built-in monitoring
 
 #### [Railway](./railway/)

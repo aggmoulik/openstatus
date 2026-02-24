@@ -46,7 +46,60 @@ Error: connect ECONNREFUSED 127.0.0.1:5432
 **Solution:**
 1. Verify database service is healthy
 2. Check `DATABASE_URL` uses correct service name
-3. Ensure proper service dependencies in `render.yaml`
+3. Note: Service dependencies are managed automatically by Render
+
+## Render Blueprint Issues
+
+### Common Blueprint Validation Errors
+
+If you encounter blueprint validation errors in Render, ensure your `render.yaml` follows the correct format:
+
+#### Unsupported Fields
+Render's blueprint format doesn't support these fields:
+- `healthCheck` - Health checks are handled by Render automatically
+- `dependsOn` - Service dependencies are managed by Render's startup order
+
+#### Correct Image Format
+```yaml
+# ❌ Incorrect
+image: "postgres:15-alpine"
+
+# ✅ Correct  
+image: postgres:15-alpine
+```
+
+#### Example Valid Service
+```yaml
+services:
+  - type: web
+    name: my-service
+    env: docker
+    repo: https://github.com/user/repo.git
+    rootDir: app
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: NODE_ENV
+        value: production
+```
+
+### Blueprint Validation Failed
+
+**Problem**: Render shows validation errors when parsing `render.yaml`
+
+**Common Errors**:
+```
+cannot unmarshal !!str `postgres:15-alpine` into file.Image
+field healthCheck not found in type file.Service
+field dependsOn not found in type file.Service
+```
+
+**Solution**: 
+1. Remove unsupported fields (`healthCheck`, `dependsOn`)
+2. Ensure proper YAML syntax
+3. Check image field format (no quotes needed)
+4. Validate all service names are unique
+
+**Fixed in**: Both full-stack and lightweight configurations have been updated to use the correct Render blueprint format.
 
 ## Database Issues
 
