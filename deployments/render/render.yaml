@@ -5,7 +5,7 @@ databases:
   # PostgreSQL Database (Free Tier - 1GB limit, expires in 30 days)
   - name: openstatus-db
     plan: free
-    diskSizeGB: 1  # Free tier limit is 1GB
+    # diskSizeGB: 1  # Free tier limit is 1GB
 
 services:
   # Redis Cache (Free Tier - Key Value instance)
