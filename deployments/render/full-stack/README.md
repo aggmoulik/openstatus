@@ -1,21 +1,43 @@
-# OpenStatus Full Stack on Render
+# OpenStatus Full Stack on Render (Free Tier)
 
-Deploy the complete OpenStatus platform with automated monitoring, alerts, and analytics on Render.
+Deploy the complete OpenStatus platform with automated monitoring, alerts, and analytics on Render's free tier.
+
+> **⚠️ Free Tier Limitations**: This configuration is optimized for Render's free tier and has important limitations. See [Free Tier Considerations](#free-tier-considerations) below.
 
 ## Overview
 
 This deployment includes:
 - **Dashboard & Status Page**: Complete web interfaces
 - **API Server**: REST API for all operations
-- **Background Workflows**: Automated monitoring and alerting
-- **PostgreSQL Database**: Data persistence
-- **Redis Cache**: Performance optimization
+- **Background Workflows**: Available but spins down when idle
+- **PostgreSQL Database**: 1GB storage, expires in 30 days
+- **Redis Cache**: Available but in-memory only, data lost on restart
 
 Perfect for:
-- Production monitoring setups
-- Teams needing automated alerts
-- Complete status page solution
-- Analytics and reporting
+- **Testing and development**: Try OpenStatus without cost
+- **Hobby projects**: Personal status pages and dashboards
+- **Learning**: Experiment with the platform
+- **Small projects**: Limited monitoring needs
+
+## ⚠️ Free Tier Considerations
+
+### Database Limitations
+- **Storage**: Limited to 1GB (may be insufficient for heavy usage)
+- **Expiration**: Database expires after 30 days (data lost)
+- **Maintenance**: Render may restart database at any time
+- **Backups**: No automatic backups on free tier
+
+### Service Limitations
+- **Spin-down**: Services spin down after 15 minutes of inactivity
+- **Redis**: Available but in-memory only, data lost on restart
+- **Workers**: Available but spin down when idle (may affect monitoring)
+- **Performance**: Limited resources may affect performance
+
+### Usage Limits
+- **750 hours/month**: Free instance hours limit
+- **Bandwidth**: 100GB/month outbound bandwidth
+- **Builds**: Limited build pipeline minutes
+- **Scaling**: No horizontal scaling on free tier
 
 ## Quick Start
 
@@ -59,14 +81,14 @@ Perfect for:
 
 ## Services
 
-| Service | URL Pattern | Purpose |
-|---------|-------------|---------|
-| Dashboard | `https://openstatus-dashboard.onrender.com` | Admin interface |
-| Status Page | `https://openstatus-status-page.onrender.com` | Public status pages |
-| API Server | Private service | REST API |
-| Workflows | Private service | Background jobs |
-| Database | Internal | PostgreSQL |
-| Redis | Internal | Cache |
+| Service | URL Pattern | Purpose | Free Tier Notes |
+|---------|-------------|---------|----------------|
+| Dashboard | `https://openstatus-dashboard.onrender.com` | Admin interface | Spins down after 15min idle |
+| Status Page | `https://openstatus-status-page.onrender.com` | Public status pages | Spins down after 15min idle |
+| API Server | Private service | REST API | Spins down after 15min idle |
+| Workflows | Private service | Background jobs | Spins down after 15min idle |
+| Database | Internal | PostgreSQL | 1GB, expires in 30 days |
+| Redis | Internal | Cache | In-memory only, data lost on restart |
 
 ## Configuration
 
@@ -86,10 +108,11 @@ Perfect for:
 
 ### Render-Specific Features
 
-#### Automatic Service Management
+#### Free Tier Service Management
 - **Health Checks**: Render automatically monitors all services
 - **Service Dependencies**: Render manages startup order
 - **SSL Certificates**: Automatic HTTPS for all web services
+- **Spin-down Behavior**: Services sleep after 15 minutes of inactivity
 - **Build Optimization**: Efficient Docker layer caching
 
 #### Blueprint Configuration
@@ -97,7 +120,7 @@ The `render.yaml` uses Render's blueprint format:
 - No manual `healthCheck` definitions needed
 - No `dependsOn` configurations required
 - Automatic service discovery and networking
-- Optimized for Render's infrastructure
+- Optimized for Render's free tier
 
 ## Post-Deployment Setup
 
@@ -118,15 +141,15 @@ curl -X POST https://openstatus-dashboard.onrender.com/api/workspaces \
 # Set limits (replace WORKSPACE_ID)
 curl -X PATCH https://openstatus-dashboard.onrender.com/api/workspaces/WORKSPACE_ID \
   -H "Content-Type: application/json" \
-  -d '{"limits": "{\"monitors\":100,\"periodicity\":[\"30s\",\"1m\",\"5m\",\"10m\",\"30m\",\"1h\"],\"multi-region\":true,\"data-retention\":\"24 months\",\"status-pages\":20,\"maintenance\":true,\"status-subscribers\":true,\"custom-domain\":true,\"password-protection\":true,\"white-label\":true,\"notifications\":true,\"sms\":true,\"pagerduty\":true,\"notification-channels\":50,\"members\":\"Unlimited\",\"audit-log\":true,\"private-locations\":true}"}'
+  -d '{"limits": "{\"monitors\":10,\"periodicity\":[\"30s\",\"1m\",\"5m\",\"10m\",\"30m\",\"1h\"],\"multi-region\":false,\"data-retention\":\"7 days\",\"status-pages\":2,\"maintenance\":true,\"status-subscribers\":true,\"custom-domain\":false,\"password-protection\":false,\"white-label\":false,\"notifications\":false,\"sms\":false,\"pagerduty\":false,\"notification-channels\":5,\"members\":\"Unlimited\",\"audit-log\":false,\"private-locations\":false}"}'
 ```
 
 ### 3. Create Your First Monitor
 
 1. In the dashboard, click "Monitors"
 2. Create a new monitor for your website or API
-3. Configure check frequency and regions
-4. Set up notification channels
+3. Configure check frequency (limited options on free tier)
+4. Set up notification channels (email only on free tier)
 
 ### 4. Create Status Pages
 
@@ -138,67 +161,84 @@ curl -X PATCH https://openstatus-dashboard.onrender.com/api/workspaces/WORKSPACE
 
 ## Features
 
-### What's Included
-
-✅ **Complete Monitoring**
-- Automated uptime checks
-- Multi-region monitoring
-- Performance metrics
-- Alert notifications
+### What's Included (Free Tier)
 
 ✅ **Status Page Management**
-- Multiple status pages
+- Multiple status pages (limited to 2)
 - Custom themes and branding
 - Component status tracking
-- Incident management
+- Manual incident management
 
 ✅ **Dashboard & Analytics**
 - Real-time monitoring dashboard
-- Historical data and trends
-- Performance analytics
+- Limited historical data (7 days)
 - User management
+- Basic analytics
 
 ✅ **Background Processing**
-- Automated monitoring workflows
-- Alert processing
-- Data aggregation
-- Report generation
+- Automated monitoring workflows (spins down when idle)
+- Alert processing (spins down when idle)
+- Data aggregation (spins down when idle)
+- Report generation (spins down when idle)
 
-✅ **Render Benefits**
+✅ **Render Free Tier Benefits**
 - Automatic SSL certificates
 - Built-in monitoring and logging
-- Easy scaling
-- Managed database and Redis
+- 750 free instance hours per month
+- Easy to get started
 
-### Advanced Features
+### ⚠️ Free Tier Limitations
 
-- **Private Locations**: Deploy monitoring probes globally
-- **Custom Notifications**: Slack, Discord, email, SMS
-- **API Access**: Complete REST API for automation
-- **Webhooks**: Real-time event notifications
-- **Custom Domains**: Use your own domains for status pages
+❌ **Automated Monitoring**
+- Background workers spin down when idle (may affect reliability)
+- Alert notifications may be delayed due to spin-up time
+- Limited to manual incident management during idle periods
+
+❌ **Advanced Features**
+- No private monitoring locations
+- No multi-region monitoring
+- No API rate limiting
+- No advanced analytics
+
+❌ **Performance**
+- Services spin down when idle (15 minutes)
+- Limited resources may affect performance
+- No horizontal scaling
+- Limited database storage (1GB)
+- Redis cache loses data on restarts
+
+❌ **Reliability**
+- Database expires after 30 days
+- No automatic backups
+- Services may restart at any time
+- Data loss on service restarts
 
 ## Scaling
 
-### Vertical Scaling
+### Free Tier Limitations
 
-1. Go to service settings in Render dashboard
-2. Click "Settings" → "Scaling"
-3. Choose a more powerful instance type
+- **No Vertical Scaling**: Cannot upgrade instance types on free tier
+- **No Horizontal Scaling**: Cannot add more instances
+- **Fixed Resources**: Limited CPU and memory allocation
+- **No Custom Plans**: Cannot create custom instance types
 
-### Horizontal Scaling
+### Upgrading to Paid Plans
 
-1. Enable "Horizontal Scaling" for web services
-2. Set minimum and maximum instances
-3. Configure scaling thresholds
-4. Render handles load balancing automatically
+To overcome free tier limitations:
 
-### Database Scaling
+1. **Go to Render Dashboard**
+2. **Select your service**
+3. **Click "Settings" → "Scaling"**
+4. **Choose a paid instance type**
+5. **Add payment method** if required
 
-1. Go to database service settings
-2. Upgrade to larger instance type
-3. Adjust disk size as needed
-4. Render handles migration automatically
+### Benefits of Upgrading
+
+- **No spin-down**: Services stay always active
+- **More Resources**: Better performance
+- **Horizontal Scaling**: Multiple instances
+- **Backups**: Automatic database backups
+- **Advanced Features**: All monitoring features enabled
 
 ## Security
 
@@ -209,49 +249,44 @@ curl -X PATCH https://openstatus-dashboard.onrender.com/api/workspaces/WORKSPACE
 - **Secrets Management**: Secure environment variable storage
 - **Network Security**: Internal services not exposed to internet
 
+### Free Tier Security Considerations
+
+- **Data Persistence**: Database expires in 30 days
+- **Service Availability**: Services spin down when idle
+- **Resource Limits**: Limited attack surface due to resource constraints
+- **Backup Strategy**: Manual backups required for data protection
+
 ### Best Practices
 
 - Use strong `AUTH_SECRET` values
 - Enable OAuth authentication
-- Regularly update dependencies
-- Monitor Render's security advisories
-- Use Render's built-in backup features
+- Regularly export data before database expiration
+- Monitor usage to avoid hitting limits
+- Consider upgrading for production use
 
 ## Troubleshooting
 
-### Common Issues
+### Common Free Tier Issues
 
-**Service won't start:**
-- Check environment variables in Render dashboard
-- Review build logs for each service
-- Verify service dependencies (Render handles automatically)
-- Check resource allocation
+**Service spins down frequently:**
+- This is expected behavior on free tier
+- Services spin down after 15 minutes of inactivity
+- First request after spin-up may be slow
 
-**Database connection errors:**
-- Ensure database service is healthy
-- Check `DATABASE_URL` format
-- Verify service names in connection strings
-- Check network connectivity
+**Database expired:**
+- Free databases expire after 30 days
+- Upgrade to paid instance type to preserve data
+- Export data before expiration
 
-**Authentication issues:**
-- Verify `AUTH_SECRET` is set consistently
-- Check email configuration with Resend
-- Ensure proper OAuth setup
-- Check service communication
+**Build failures:**
+- Check if you've exceeded build pipeline minutes
+- Verify repository size and dependencies
+- Consider optimizing Dockerfiles
 
-### Render-Specific Issues
-
-**Blueprint validation errors:**
-- Ensure `render.yaml` follows Render's format
-- Remove unsupported fields (`healthCheck`, `dependsOn`)
-- Check image format (no quotes needed)
-- Validate YAML syntax
-
-**Build timeouts:**
-- Optimize Dockerfiles for faster builds
-- Use `.dockerignore` to exclude unnecessary files
-- Consider reducing build complexity
-- Check for large dependencies
+**Performance issues:**
+- Free tier has limited resources
+- Services may be slow during high traffic
+- Consider upgrading for better performance
 
 ### Getting Help
 
@@ -266,8 +301,8 @@ curl -X PATCH https://openstatus-dashboard.onrender.com/api/workspaces/WORKSPACE
 
 - **750 hours/month** of service time
 - **100GB** of egress bandwidth
-- **1GB** of storage
-- Perfect for small projects and teams
+- **1GB** database storage
+- **No credit card required** for free tier
 
 ### Paid Plans
 
@@ -276,20 +311,21 @@ curl -X PATCH https://openstatus-dashboard.onrender.com/api/workspaces/WORKSPACE
 - **Enhanced monitoring** and logging
 - **Priority support**
 - **Custom domains**
+- **Automatic backups**
 
 ### Cost Optimization
 
-- Use lightweight deployment for status page only
-- Scale services independently based on needs
-- Optimize build times with proper Dockerfiles
-- Monitor resource usage in Render dashboard
+- **Use lightweight deployment**: Status page only uses fewer resources
+- **Monitor usage**: Track your free tier consumption
+- **Optimize builds**: Reduce build times and complexity
+- **Consider upgrading**: For production or heavy usage
 
 ## Next Steps
 
 - [Configure custom domains](../docs/configuration.md#custom-domains)
-- [Set up private monitoring locations](../docs/private-locations.md)
+- [Set up manual monitoring](../docs/manual-monitoring.md)
 - [Configure notification channels](../docs/notifications.md)
-- [Set up API access](../docs/api.md)
+- [Upgrade to paid tier](https://render.com/docs/billing) when ready
 - [Deploy lightweight version](../lightweight/) for status page only
 
 ## Support

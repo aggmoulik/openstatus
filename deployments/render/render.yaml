@@ -1,20 +1,22 @@
-# OpenStatus Render Deployment Configuration
-# This file defines the services for deploying OpenStatus on Render
+# OpenStatus Render Deployment Configuration (Free Tier)
+# This file defines the services for deploying OpenStatus on Render using free tier instances
 
 databases:
-  # PostgreSQL Database
+  # PostgreSQL Database (Free Tier - 1GB limit, expires in 30 days)
   - name: openstatus-db
     plan: free
-    diskSizeGB: 10
+    diskSizeGB: 1  # Free tier limit is 1GB
 
 services:
-  # Redis Cache
+  # Redis Cache (Free Tier - Key Value instance)
+  # NOTE: Free Key Value is in-memory only and loses data on restart
+  # Suitable for temporary caching but not for persistent data
   - type: keyvalue
     name: openstatus-redis
     plan: free
     ipAllowList: [] # Allow all IPs for now
 
-  # API Server
+  # API Server (Free Web Service - spins down after 15 minutes idle)
   - type: pserv
     name: openstatus-api
     env: docker
@@ -35,7 +37,9 @@ services:
       - key: SELF_HOST
         value: "true"
 
-  # Background Workflows
+  # Background Workflows (Free Worker - spins down after 15 minutes idle)
+  # NOTE: Workers on free tier spin down when idle, which may affect monitoring
+  # Consider using web service with cron for more reliable background jobs
   - type: worker
     name: openstatus-workflows
     env: docker
@@ -52,7 +56,7 @@ services:
       - key: NODE_ENV
         value: production
 
-  # Dashboard Web App
+  # Dashboard Web App (Free Web Service - spins down after 15 minutes idle)
   - type: web
     name: openstatus-dashboard
     env: docker
@@ -71,7 +75,7 @@ services:
       - key: AUTH_SECRET
         sync: false
 
-  # Status Page Web App
+  # Status Page Web App (Free Web Service - spins down after 15 minutes idle)
   - type: web
     name: openstatus-status-page
     env: docker

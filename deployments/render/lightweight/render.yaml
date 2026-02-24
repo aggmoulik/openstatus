@@ -1,14 +1,14 @@
-# OpenStatus Lightweight Render Deployment (Status Page Only)
-# This file defines a minimal deployment for status page functionality
+# OpenStatus Lightweight Render Deployment (Free Tier)
+# This file defines a minimal deployment for status page functionality using free tier instances
 
 databases:
-  # PostgreSQL Database
+  # PostgreSQL Database (Free Tier - 1GB limit, expires in 30 days)
   - name: openstatus-db
     plan: free
-    diskSizeGB: 5
+    diskSizeGB: 1  # Free tier limit is 1GB
 
 services:
-  # Dashboard (Lightweight - Status Page Only)
+  # Dashboard (Lightweight - Free Web Service - spins down after 15 minutes idle)
   - type: web
     name: openstatus-dashboard
     env: docker
