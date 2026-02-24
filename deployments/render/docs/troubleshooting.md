@@ -94,12 +94,41 @@ field dependsOn not found in type file.Service
 ```
 
 **Solution**: 
-1. Remove unsupported fields (`healthCheck`, `dependsOn`)
-2. Ensure proper YAML syntax
-3. Check image field format (no quotes needed)
-4. Validate all service names are unique
+1. **Use correct database format**: PostgreSQL should be in `databases` section, not `services`
+2. **Use correct Redis format**: Redis should be `type: keyvalue`, not `type: pserv`
+3. **Remove unsupported fields** (`healthCheck`, `dependsOn`)
+4. **Use environment variable interpolation**: `${service.HOSTNAME}`, `${service.PORT}`
+5. **Validate YAML syntax**: Check indentation and formatting
 
-**Fixed in**: Both full-stack and lightweight configurations have been updated to use the correct Render blueprint format.
+**Fixed in**: Both full-stack and lightweight configurations have been updated to use the correct Render blueprint format with:
+- `databases` section for PostgreSQL
+- `keyvalue` type for Redis
+- Proper environment variable interpolation
+- No unsupported fields
+
+**Example Correct Configuration**:
+```yaml
+databases:
+  - name: openstatus-db
+    plan: free
+    diskSizeGB: 10
+
+services:
+  - type: keyvalue
+    name: openstatus-redis
+    plan: free
+    ipAllowList: []
+  
+  - type: web
+    name: openstatus-dashboard
+    env: docker
+    repo: https://github.com/user/repo.git
+    rootDir: apps/dashboard
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: DATABASE_URL
+        value: postgresql://openstatus:${openstatus-db.POSTGRES_PASSWORD}@${openstatus-db.HOSTNAME}:${openstatus-db.PORT}/openstatus
+```
 
 ## Database Issues
 

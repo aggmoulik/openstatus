@@ -1,32 +1,18 @@
 # OpenStatus Render Deployment Configuration
 # This file defines the services for deploying OpenStatus on Render
 
-services:
+databases:
   # PostgreSQL Database
-  - type: pserv
-    name: openstatus-db
-    env: docker
-    image: postgres:15-alpine
-    envVars:
-      - key: POSTGRES_DB
-        value: openstatus
-      - key: POSTGRES_USER
-        value: openstatus
-      - key: POSTGRES_PASSWORD
-        generateValue: true
-    disk:
-      name: openstatus-db-data
-      mountPath: /var/lib/postgresql/data
-      sizeGB: 10
+  - name: openstatus-db
+    plan: free
+    diskSizeGB: 10
 
+services:
   # Redis Cache
-  - type: pserv
+  - type: keyvalue
     name: openstatus-redis
-    env: docker
-    image: redis:7-alpine
-    envVars:
-      - key: REDIS_PASSWORD
-        generateValue: true
+    plan: free
+    ipAllowList: [] # Allow all IPs for now
 
   # API Server
   - type: pserv
@@ -37,9 +23,9 @@ services:
     dockerfilePath: ./Dockerfile
     envVars:
       - key: DATABASE_URL
-        value: postgresql://openstatus:${openstatus-db.POSTGRES_PASSWORD}@openstatus-db:5432/openstatus
+        value: postgresql://openstatus:${openstatus-db.POSTGRES_PASSWORD}@${openstatus-db.HOSTNAME}:${openstatus-db.PORT}/openstatus
       - key: REDIS_URL
-        value: redis://:${openstatus-redis.REDIS_PASSWORD}@openstatus-redis:6379
+        value: redis://:${openstatus-redis.REDIS_PASSWORD}@${openstatus-redis.HOSTNAME}:${openstatus-redis.PORT}
       - key: PORT
         value: 3000
       - key: NODE_ENV
@@ -58,9 +44,9 @@ services:
     dockerfilePath: ./Dockerfile
     envVars:
       - key: DATABASE_URL
-        value: postgresql://openstatus:${openstatus-db.POSTGRES_PASSWORD}@openstatus-db:5432/openstatus
+        value: postgresql://openstatus:${openstatus-db.POSTGRES_PASSWORD}@${openstatus-db.HOSTNAME}:${openstatus-db.PORT}/openstatus
       - key: REDIS_URL
-        value: redis://:${openstatus-redis.REDIS_PASSWORD}@openstatus-redis:6379
+        value: redis://:${openstatus-redis.REDIS_PASSWORD}@${openstatus-redis.HOSTNAME}:${openstatus-redis.PORT}
       - key: PORT
         value: 3000
       - key: NODE_ENV
@@ -75,7 +61,7 @@ services:
     dockerfilePath: ./Dockerfile
     envVars:
       - key: DATABASE_URL
-        value: postgresql://openstatus:${openstatus-db.POSTGRES_PASSWORD}@openstatus-db:5432/openstatus
+        value: postgresql://openstatus:${openstatus-db.POSTGRES_PASSWORD}@${openstatus-db.HOSTNAME}:${openstatus-db.PORT}/openstatus
       - key: NEXT_PUBLIC_URL
         value: https://openstatus-dashboard.onrender.com
       - key: PORT
@@ -94,7 +80,7 @@ services:
     dockerfilePath: ./Dockerfile
     envVars:
       - key: DATABASE_URL
-        value: postgresql://openstatus:${openstatus-db.POSTGRES_PASSWORD}@openstatus-db:5432/openstatus
+        value: postgresql://openstatus:${openstatus-db.POSTGRES_PASSWORD}@${openstatus-db.HOSTNAME}:${openstatus-db.PORT}/openstatus
       - key: NEXT_PUBLIC_URL
         value: https://openstatus-status-page.onrender.com
       - key: PORT
