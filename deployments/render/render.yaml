@@ -1,0 +1,127 @@
+# OpenStatus Render Deployment Configuration
+# This file defines the services for deploying OpenStatus on Render
+
+services:
+  # PostgreSQL Database
+  - type: pserv
+    name: openstatus-db
+    env: docker
+    image: postgres:15-alpine
+    healthCheck:
+      path: /health
+    envVars:
+      - key: POSTGRES_DB
+        value: openstatus
+      - key: POSTGRES_USER
+        value: openstatus
+      - key: POSTGRES_PASSWORD
+        generateValue: true
+    disk:
+      name: openstatus-db-data
+      mountPath: /var/lib/postgresql/data
+      sizeGB: 10
+
+  # Redis Cache
+  - type: pserv
+    name: openstatus-redis
+    env: docker
+    image: redis:7-alpine
+    healthCheck:
+      path: /health
+    envVars:
+      - key: REDIS_PASSWORD
+        generateValue: true
+
+  # API Server
+  - type: pserv
+    name: openstatus-api
+    env: docker
+    repo: https://github.com/openstatushq/openstatus.git
+    rootDir: deployments/render/full-stack/api
+    dockerfilePath: ./Dockerfile
+    healthCheck:
+      path: /ping
+    envVars:
+      - key: DATABASE_URL
+        value: postgresql://openstatus:${openstatus-db.POSTGRES_PASSWORD}@openstatus-db:5432/openstatus
+      - key: REDIS_URL
+        value: redis://:${openstatus-redis.REDIS_PASSWORD}@openstatus-redis:6379
+      - key: PORT
+        value: 3000
+      - key: NODE_ENV
+        value: production
+      - key: AUTH_SECRET
+        generateValue: true
+      - key: SELF_HOST
+        value: "true"
+    dependsOn:
+      - openstatus-db
+      - openstatus-redis
+
+  # Background Workflows
+  - type: worker
+    name: openstatus-workflows
+    env: docker
+    repo: https://github.com/openstatushq/openstatus.git
+    rootDir: deployments/render/full-stack/workflows
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: DATABASE_URL
+        value: postgresql://openstatus:${openstatus-db.POSTGRES_PASSWORD}@openstatus-db:5432/openstatus
+      - key: REDIS_URL
+        value: redis://:${openstatus-redis.REDIS_PASSWORD}@openstatus-redis:6379
+      - key: PORT
+        value: 3000
+      - key: NODE_ENV
+        value: production
+    dependsOn:
+      - openstatus-db
+      - openstatus-redis
+
+  # Dashboard Web App
+  - type: web
+    name: openstatus-dashboard
+    env: docker
+    repo: https://github.com/openstatushq/openstatus.git
+    rootDir: deployments/render/full-stack/dashboard
+    dockerfilePath: ./Dockerfile
+    healthCheck:
+      path: /
+    envVars:
+      - key: DATABASE_URL
+        value: postgresql://openstatus:${openstatus-db.POSTGRES_PASSWORD}@openstatus-db:5432/openstatus
+      - key: NEXT_PUBLIC_URL
+        value: https://openstatus-dashboard.onrender.com
+      - key: PORT
+        value: 3000
+      - key: NODE_ENV
+        value: production
+      - key: AUTH_SECRET
+        sync: false
+    dependsOn:
+      - openstatus-api
+      - openstatus-db
+
+  # Status Page Web App
+  - type: web
+    name: openstatus-status-page
+    env: docker
+    repo: https://github.com/openstatushq/openstatus.git
+    rootDir: deployments/render/full-stack/status-page
+    dockerfilePath: ./Dockerfile
+    healthCheck:
+      path: /
+    envVars:
+      - key: DATABASE_URL
+        value: postgresql://openstatus:${openstatus-db.POSTGRES_PASSWORD}@openstatus-db:5432/openstatus
+      - key: NEXT_PUBLIC_URL
+        value: https://openstatus-status-page.onrender.com
+      - key: PORT
+        value: 3000
+      - key: NODE_ENV
+        value: production
+      - key: AUTH_SECRET
+        sync: false
+    dependsOn:
+      - openstatus-api
+      - openstatus-db

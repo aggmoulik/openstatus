@@ -1,0 +1,49 @@
+# OpenStatus Lightweight Render Deployment (Status Page Only)
+# This file defines a minimal deployment for status page functionality
+
+services:
+  # PostgreSQL Database
+  - type: pserv
+    name: openstatus-db
+    env: docker
+    image: postgres:15-alpine
+    healthCheck:
+      path: /health
+    envVars:
+      - key: POSTGRES_DB
+        value: openstatus
+      - key: POSTGRES_USER
+        value: openstatus
+      - key: POSTGRES_PASSWORD
+        generateValue: true
+    disk:
+      name: openstatus-db-data
+      mountPath: /var/lib/postgresql/data
+      sizeGB: 5
+
+  # Combined Dashboard and Status Page
+  - type: web
+    name: openstatus-app
+    env: docker
+    repo: https://github.com/openstatushq/openstatus.git
+    rootDir: deployments/render/lightweight/app
+    dockerfilePath: ./Dockerfile
+    healthCheck:
+      path: /
+    envVars:
+      - key: DATABASE_URL
+        value: postgresql://openstatus:${openstatus-db.POSTGRES_PASSWORD}@openstatus-db:5432/openstatus
+      - key: NEXT_PUBLIC_URL
+        value: https://openstatus-app.onrender.com
+      - key: PORT
+        value: 3000
+      - key: NODE_ENV
+        value: production
+      - key: AUTH_SECRET
+        generateValue: true
+      - key: SELF_HOST
+        value: "true"
+      - key: RESEND_API_KEY
+        sync: false
+    dependsOn:
+      - openstatus-db

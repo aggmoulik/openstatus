@@ -1,0 +1,54 @@
+# OpenStatus Railway Configuration
+[build]
+builder = "nixpacks"
+
+[deploy]
+healthcheckPath = "/"
+healthcheckTimeout = 100
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 10
+
+[[services]]
+name = "openstatus-db"
+source = "."
+dockerfilePath = "deployments/railway/full-stack/database/Dockerfile"
+healthcheckPath = "/health"
+healthcheckTimeout = 100
+port = 8080
+
+[[services]]
+name = "openstatus-redis"
+source = "."
+dockerfilePath = "deployments/railway/full-stack/redis/Dockerfile"
+healthcheckPath = "/health"
+healthcheckTimeout = 100
+port = 6379
+
+[[services]]
+name = "openstatus-api"
+source = "."
+dockerfilePath = "deployments/railway/full-stack/api/Dockerfile"
+healthcheckPath = "/ping"
+healthcheckTimeout = 100
+port = 3000
+
+[[services]]
+name = "openstatus-dashboard"
+source = "."
+dockerfilePath = "deployments/railway/full-stack/dashboard/Dockerfile"
+healthcheckPath = "/"
+healthcheckTimeout = 100
+port = 3000
+
+[[services]]
+name = "openstatus-status-page"
+source = "."
+dockerfilePath = "deployments/railway/full-stack/status-page/Dockerfile"
+healthcheckPath = "/"
+healthcheckTimeout = 100
+port = 3000
+
+[[services]]
+name = "openstatus-workflows"
+source = "."
+dockerfilePath = "deployments/railway/full-stack/workflows/Dockerfile"
