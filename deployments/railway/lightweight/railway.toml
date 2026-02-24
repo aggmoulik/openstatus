@@ -1,0 +1,28 @@
+# OpenStatus Lightweight Railway Configuration
+# This file defines services for deploying OpenStatus on Railway
+
+[build]
+builder = "nixpacks"
+
+[deploy]
+healthcheckPath = "/"
+healthcheckTimeout = 100
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 10
+
+[[services]]
+name = "openstatus-db"
+source = "."
+dockerfilePath = "deployments/railway/full-stack/database/Dockerfile"
+healthcheckPath = "/health"
+healthcheckTimeout = 100
+port = 8080
+
+[[services]]
+name = "openstatus-dashboard"
+source = "."
+dockerfilePath = "apps/dashboard/Dockerfile"
+healthcheckPath = "/"
+healthcheckTimeout = 100
+port = 3000
+startCommand = "npm start"

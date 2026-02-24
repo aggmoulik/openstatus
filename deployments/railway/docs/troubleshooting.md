@@ -294,6 +294,61 @@ Error: Service name resolution failed
 3. Use Railway's internal service names
 4. Ensure proper service naming
 
+## Railway Nixpacks Issues
+
+### No Start Command Could Be Found Error
+
+**Problem**: Railway returns "No start command could be found" error during deployment.
+
+**Root Cause**: Railway's Nixpacks builder can't automatically detect the correct start command for Node.js applications, especially when multiple apps are in the same repository.
+
+**Solution**: Explicitly specify the `startCommand` in your `railway.toml` file:
+
+```toml
+[[services]]
+name = "openstatus-api"
+source = "."
+dockerfilePath = "apps/server/Dockerfile"
+healthcheckPath = "/ping"
+healthcheckTimeout = 100
+port = 3000
+startCommand = "npm start"
+```
+
+**Common Start Commands**
+
+**Node.js Applications**:
+- `npm start` - Most common, uses "start" script in package.json
+- `yarn start` - Uses Yarn package manager
+- `pnpm start` - Uses pnpm package manager
+- `bun start` - Uses Bun runtime
+
+**Python Applications**:
+- `python main.py` - If main.py exists
+- `python manage.py migrate && gunicorn app.wsgi` - Django applications
+
+**Ruby Applications**:
+- `bundle exec rails server -b 0.0.0.0` - Rails applications
+
+### Detection Issues
+
+Nixpacks tries these commands in order for Node.js:
+1. `npm start`
+2. `yarn start`
+3. `pnpm start`
+4. `bun start`
+
+If none of these work, it returns the "No start command could be found" error.
+
+### Best Practices
+
+1. **Always specify startCommand**: Don't rely on automatic detection
+2. **Use consistent commands**: Use the same start command across all services
+3. **Test locally**: Verify the start command works before deploying
+4. **Check package.json**: Ensure the "start" script exists and works correctly
+
+**Fixed in**: All Railway configurations have been updated with explicit `startCommand = "npm start"` for all Node.js services.
+
 ## Debugging Tools
 
 ### Railway Dashboard
