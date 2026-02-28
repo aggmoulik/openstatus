@@ -1,0 +1,95 @@
+{
+  "statusPages": [
+    {
+      "id": "page_123456789012345678",
+      "name": "Production Status",
+      "slug": "status.example.com",
+      "description": "Status page for production services",
+      "published": true,
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-15T10:30:00Z"
+    },
+    {
+      "id": "page_123456789012345679",
+      "name": "Staging Status",
+      "slug": "staging-status.example.com",
+      "description": "Status page for staging environment",
+      "published": true,
+      "createdAt": "2024-01-02T00:00:00Z",
+      "updatedAt": "2024-01-15T09:45:00Z"
+    }
+  ],
+  "monitors": [
+    {
+      "id": "comp_123456789012345678",
+      "name": "API Gateway",
+      "description": "Main API gateway service",
+      "status": "active",
+      "jobType": "http",
+      "workspaceId": 1,
+      "pageId": 1
+    },
+    {
+      "id": "comp_123456789012345679",
+      "name": "Database",
+      "description": "Primary PostgreSQL database",
+      "status": "degraded",
+      "jobType": "http",
+      "workspaceId": 1,
+      "pageId": 1
+    },
+    {
+      "id": "comp_123456789012345680",
+      "name": "Cache Service",
+      "description": "Redis cache layer",
+      "status": "inactive",
+      "jobType": "http",
+      "workspaceId": 1,
+      "pageId": 1
+    }
+  ],
+  "incidents": [
+    {
+      "id": "inc_123456789012345678",
+      "name": "API Latency Issues",
+      "status": "resolved",
+      "impact": "low",
+      "createdAt": "2024-01-15T08:00:00Z",
+      "updatedAt": "2024-01-15T10:30:00Z"
+    },
+    {
+      "id": "inc_123456789012345679",
+      "name": "Database Performance Degradation",
+      "status": "identified",
+      "impact": "medium",
+      "createdAt": "2024-01-15T09:00:00Z",
+      "updatedAt": "2024-01-15T10:15:00Z"
+    },
+    {
+      "id": "inc_123456789012345680",
+      "name": "Cache Service Outage",
+      "status": "investigating",
+      "impact": "high",
+      "createdAt": "2024-01-15T09:30:00Z",
+      "updatedAt": "2024-01-15T10:00:00Z"
+    }
+  ],
+  "maintenance": [
+    {
+      "id": "maint_123456789012345678",
+      "name": "Scheduled Database Maintenance",
+      "description": "Routine database maintenance and optimization",
+      "status": "scheduled",
+      "createdAt": "2024-01-20T00:00:00Z",
+      "updatedAt": "2024-01-20T00:00:00Z"
+    },
+    {
+      "id": "maint_123456789012345679",
+      "name": "API Gateway Upgrade",
+      "description": "Upgrade API gateway to latest version",
+      "status": "in_progress",
+      "createdAt": "2024-01-15T00:00:00Z",
+      "updatedAt": "2024-01-25T22:30:00Z"
+    }
+  ]
+}

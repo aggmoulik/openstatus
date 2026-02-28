@@ -6,6 +6,7 @@ import { incidentRouter } from "./router/incident";
 import { invitationRouter } from "./router/invitation";
 import { maintenanceRouter } from "./router/maintenance";
 import { memberRouter } from "./router/member";
+import { migrationRouter } from "./router/migration";
 import { monitorRouter } from "./router/monitor";
 import { monitorTagRouter } from "./router/monitorTag";
 import { notificationRouter } from "./router/notification";
@@ -42,4 +43,5 @@ export const edgeRouter = createTRPCRouter({
   feedback: feedbackRouter,
   statusPage: statusPageRouter,
   privateLocation: privateLocationRouter,
+  migration: migrationRouter,
 });
