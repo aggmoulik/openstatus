@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { MigrationAPIService } from "../service/migration/migration-api-service";
 
 // Input Schemas
 const startMigrationSchema = z.object({
@@ -153,52 +154,51 @@ export type MigrationSummary = z.infer<typeof migrationSummaryOutputSchema>;
 export type DataSelection = z.infer<typeof updateSelectionSchema>["selection"];
 
 export const migrationRouter = createTRPCRouter({
+  // Provider discovery
+  getProviders: protectedProcedure.query(async () => {
+    const service = new MigrationAPIService();
+    return await service.getAvailableProviders();
+  }),
+
   // Migration management
   start: protectedProcedure
     .input(startMigrationSchema)
     .mutation(async ({ input }) => {
-      // TODO: Implement migration start logic
-      return {
-        jobId: `job_${Date.now()}`,
-        status: "pending" as const,
-        progress: 0,
-        totalEntities: 0,
-        previewData: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+      const service = new MigrationAPIService();
+      return await service.startMigration({
+        provider: input.provider,
+        credentials: input.credentials,
+        workspaceId: input.workspaceId,
+      });
     }),
 
   status: protectedProcedure.input(statusSchema).query(async ({ input }) => {
-    // TODO: Implement migration status retrieval
-    return {
-      id: input.jobId,
-      provider: "statuspage.io",
-      status: "pending" as const,
-      progress: 0,
-      totalEntities: 0,
-      previewData: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+    const service = new MigrationAPIService();
+    return await service.getMigrationJob({ jobId: input.jobId });
   }),
 
   // Provider operations
   testAuth: protectedProcedure
     .input(testAuthSchema)
     .mutation(async ({ input }) => {
-      // TODO: Implement provider authentication test
+      const service = new MigrationAPIService();
+      const result = await service.validateProviderCredentials({
+        provider: input.provider,
+        credentials: input.credentials,
+      });
       return {
-        success: true,
-        message: "Authentication successful",
+        success: result.data.valid,
+        message: result.data.message,
       };
     }),
 
   previewData: protectedProcedure
     .input(previewDataSchema)
     .query(async ({ input }) => {
-      // TODO: Implement data preview retrieval
-      return {
+      const service = new MigrationAPIService();
+      const jobResult = await service.getMigrationJob({ jobId: input.jobId });
+      // Extract preview data from the job result
+      return jobResult.data.migrationJob.previewData || {
         statusPages: [],
         monitors: [],
         components: [],
@@ -211,21 +211,15 @@ export const migrationRouter = createTRPCRouter({
   validate: protectedProcedure
     .input(validateSchema)
     .mutation(async ({ input }) => {
-      // TODO: Implement migration validation
-      return {
-        valid: true,
-        conflicts: [],
-      };
+      const service = new MigrationAPIService();
+      return await service.getMigrationConflicts({ jobId: input.jobId });
     }),
 
   execute: protectedProcedure
     .input(executeSchema)
     .mutation(async ({ input }) => {
-      // TODO: Implement migration execution
-      return {
-        success: true,
-        message: "Migration started",
-      };
+      const service = new MigrationAPIService();
+      return await service.executeMigration({ jobId: input.jobId });
     }),
 
   progress: protectedProcedure
@@ -251,11 +245,11 @@ export const migrationRouter = createTRPCRouter({
   updateSelection: protectedProcedure
     .input(updateSelectionSchema)
     .mutation(async ({ input }) => {
-      // TODO: Implement selection update
-      return {
-        success: true,
-        message: "Selection updated",
-      };
+      const service = new MigrationAPIService();
+      return await service.updateDataSelection({
+        jobId: input.jobId,
+        selection: input.selection,
+      });
     }),
 
   getMigrationSummary: protectedProcedure

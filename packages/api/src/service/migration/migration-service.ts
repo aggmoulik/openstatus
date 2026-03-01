@@ -10,6 +10,9 @@ import type {
   ProviderCredentials,
   StatusPageData,
 } from "./providers/base-provider";
+import { db, eq, schema } from "@openstatus/db";
+import { TRPCError } from "@trpc/server";
+import type { NewMigrationEntityModel } from "@openstatus/db/src/schema/migration";
 
 export interface StartMigrationInput {
   provider: string;
@@ -57,9 +60,9 @@ export class MigrationService {
   ) {}
 
   async startMigration(input: StartMigrationInput): Promise<MigrationJob> {
-    // Create migration job
+    // Create migration job in database
     const jobId = `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
+    
     // Test provider authentication
     const adapter = this.registry.getAdapter(input.provider);
     const authResult = await adapter.authenticate(input.credentials);
@@ -72,19 +75,36 @@ export class MigrationService {
     const config = this.registry.getProviderConfig(input.provider);
     const previewData = await this.fetchAllProviderData(adapter, config);
 
-    // Store complete dataset for user selection
-    // TODO: Implement data storage in database
+    // Create migration job in database
+    const [job] = await db
+      .insert(schema.migrationJob)
+      .values({
+        id: jobId,
+        workspaceId: input.workspaceId,
+        provider: input.provider,
+        status: "pending",
+        progress: 0,
+        totalEntities: this.calculateTotalEntities(previewData),
+        config: JSON.stringify({
+          credentials: input.credentials,
+          previewData,
+        }),
+      })
+      .returning();
+
+    // Create migration entities for all items
+    await this.createMigrationEntities(job.id, previewData);
 
     return {
-      id: jobId,
-      provider: input.provider,
-      status: "pending",
-      progress: 0,
-      totalEntities: this.calculateTotalEntities(previewData),
+      id: job.id,
+      provider: job.provider,
+      status: job.status as "pending" | "running" | "completed" | "failed",
+      progress: job.progress,
+      totalEntities: job.totalEntities,
       previewData,
-      workspaceId: input.workspaceId,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      workspaceId: job.workspaceId,
+      createdAt: job.createdAt,
+      updatedAt: job.updatedAt,
     };
   }
 
@@ -92,10 +112,22 @@ export class MigrationService {
     jobId: string,
     selection: DataSelection,
   ): Promise<void> {
-    // Update user's selection of what to migrate
-    // Calculate totals and prepare for execution
-    // TODO: Implement selection storage in database
-    console.log(`Updated selection for job ${jobId}:`, selection);
+    // Update migration entities based on user selection
+    const entities = await db.query.migrationEntity.findMany({
+      where: eq(schema.migrationEntity.migrationJobId, jobId),
+    });
+
+    for (const entity of entities) {
+      const entityTypeSelection = selection[entity.entityType as keyof DataSelection];
+      const isSelected = entityTypeSelection?.selectedIds.includes(entity.sourceId) || false;
+      
+      await db
+        .update(schema.migrationEntity)
+        .set({ 
+          status: isSelected ? "pending" : "skipped",
+        })
+        .where(eq(schema.migrationEntity.id, entity.id));
+    }
   }
 
   async executeMigration(jobId: string): Promise<void> {
@@ -387,62 +419,236 @@ export class MigrationService {
     }
   }
 
-  // Placeholder methods for database operations
-  private async getMigrationJob(_jobId: string): Promise<MigrationJob> {
-    // TODO: Implement database retrieval
-    throw new Error("getMigrationJob not implemented");
+  // Database operations
+  private async createMigrationEntities(jobId: string, data: ProviderData): Promise<void> {
+    const entities: NewMigrationEntityModel[] = [];
+    
+    // Add status pages
+    data.statusPages.forEach((page) => {
+      entities.push({
+        migrationJobId: jobId,
+        entityType: "statusPages",
+        sourceId: page.id,
+        status: "pending",
+      });
+    });
+    
+    // Add monitors
+    data.monitors.forEach((monitor) => {
+      entities.push({
+        migrationJobId: jobId,
+        entityType: "monitors",
+        sourceId: monitor.id,
+        status: "pending",
+      });
+    });
+    
+    // Add components
+    data.components.forEach((component) => {
+      entities.push({
+        migrationJobId: jobId,
+        entityType: "components",
+        sourceId: component.id,
+        status: "pending",
+      });
+    });
+    
+    // Add incidents
+    data.incidents.forEach((incident) => {
+      entities.push({
+        migrationJobId: jobId,
+        entityType: "incidents",
+        sourceId: incident.id,
+        status: "pending",
+      });
+    });
+    
+    // Add maintenance
+    data.maintenance.forEach((maintenance) => {
+      entities.push({
+        migrationJobId: jobId,
+        entityType: "maintenance",
+        sourceId: maintenance.id,
+        status: "pending",
+      });
+    });
+    
+    if (entities.length > 0) {
+      await db.insert(schema.migrationEntity).values(entities);
+    }
+  }
+  private async getMigrationJob(jobId: string): Promise<MigrationJob> {
+    const job = await db.query.migrationJob.findFirst({
+      where: eq(schema.migrationJob.id, jobId),
+    });
+    
+    if (!job) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: `Migration job ${jobId} not found`,
+      });
+    }
+    
+    return {
+      id: job.id,
+      provider: job.provider,
+      status: job.status as "pending" | "running" | "completed" | "failed",
+      progress: job.progress || 0,
+      totalEntities: job.totalEntities || 0,
+      workspaceId: job.workspaceId,
+      createdAt: job.createdAt,
+      updatedAt: job.updatedAt,
+    };
   }
 
-  private async getSelection(_jobId: string): Promise<DataSelection> {
-    // TODO: Implement selection retrieval from database
-    throw new Error("getSelection not implemented");
+  private async getSelection(jobId: string): Promise<DataSelection> {
+    const job = await db.query.migrationJob.findFirst({
+      where: eq(schema.migrationJob.id, jobId),
+      with: {
+        migrationEntities: true,
+      },
+    });
+    
+    if (!job) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: `Migration job ${jobId} not found`,
+      });
+    }
+    
+    // Parse selection from migration entities or return default
+    const selection: DataSelection = {
+      statusPages: { selectedIds: [], selectAll: false },
+      monitors: { selectedIds: [], selectAll: false },
+      components: { selectedIds: [], selectAll: false },
+      incidents: { selectedIds: [], selectAll: false },
+      maintenance: { selectedIds: [], selectAll: false },
+    };
+    
+    // Extract selected IDs from migration entities
+    job.migrationEntities.forEach((entity) => {
+      if (entity.status === "pending" && selection[entity.entityType as keyof DataSelection]) {
+        selection[entity.entityType as keyof DataSelection].selectedIds.push(entity.sourceId);
+      }
+    });
+    
+    return selection;
   }
 
   private async updateJobStatus(
     jobId: string,
     status: "pending" | "running" | "completed" | "failed",
   ): Promise<void> {
-    // TODO: Implement job status update in database
-    console.log(`Updated job ${jobId} status to: ${status}`);
+    await db
+      .update(schema.migrationJob)
+      .set({ 
+        status,
+        updatedAt: new Date(),
+      })
+      .where(eq(schema.migrationJob.id, jobId));
   }
 
   private async createStatusPage(
-    _data: any,
-    _workspaceId: number,
+    data: any,
+    workspaceId: number,
   ): Promise<{ id: number }> {
-    // TODO: Implement status page creation in database
-    return { id: Math.floor(Math.random() * 1000) };
+    const [page] = await db
+      .insert(schema.page)
+      .values({
+        workspaceId,
+        title: data.title || data.name,
+        description: data.description || "",
+        slug: data.slug || `page-${Date.now()}`,
+        published: data.published ?? true,
+        customDomain: "",
+        legacyPage: false,
+      })
+      .returning({ id: schema.page.id });
+    
+    return { id: page.id };
   }
 
   private async createMonitor(
-    _data: any,
-    _workspaceId: number,
+    data: any,
+    workspaceId: number,
   ): Promise<{ id: number }> {
-    // TODO: Implement monitor creation in database
-    return { id: Math.floor(Math.random() * 1000) };
+    const [monitor] = await db
+      .insert(schema.monitor)
+      .values({
+        workspaceId,
+        name: data.name,
+        description: data.description || "",
+        url: data.url || "https://example.com",
+        jobType: data.jobType || "http",
+        status: data.status || "active",
+        periodicity: data.periodicity || "other",
+        method: data.method || "GET",
+        regions: data.regions || "",
+        headers: data.headers || "",
+        body: data.body || "",
+        active: false, // Start inactive until user activates
+      })
+      .returning({ id: schema.monitor.id });
+    
+    return { id: monitor.id };
   }
 
   private async createComponent(
-    _data: any,
-    _workspaceId: number,
+    data: any,
+    workspaceId: number,
   ): Promise<{ id: number }> {
-    // TODO: Implement component creation in database
-    return { id: Math.floor(Math.random() * 1000) };
+    // Components are created as page components in OpenStatus
+    const [component] = await db
+      .insert(schema.pageComponent)
+      .values({
+        workspaceId,
+        pageId: data.pageId || 1, // Should be set by the caller
+        type: "monitor",
+        monitorId: data.monitorId,
+        name: data.name,
+        description: data.description,
+        order: data.position || 0,
+      })
+      .returning({ id: schema.pageComponent.id });
+    
+    return { id: component.id };
   }
 
   private async createIncident(
-    _data: any,
-    _workspaceId: number,
+    data: any,
+    workspaceId: number,
   ): Promise<{ id: number }> {
-    // TODO: Implement incident creation in database
-    return { id: Math.floor(Math.random() * 1000) };
+    const [incident] = await db
+      .insert(schema.incidentTable)
+      .values({
+        workspaceId,
+        title: data.title || data.name,
+        summary: data.summary || data.description || "",
+        status: data.status || "triage",
+        monitorId: data.monitorId,
+        startedAt: data.createdAt || new Date(),
+      })
+      .returning({ id: schema.incidentTable.id });
+    
+    return { id: incident.id };
   }
 
   private async createMaintenance(
-    _data: any,
-    _workspaceId: number,
+    data: any,
+    workspaceId: number,
   ): Promise<{ id: number }> {
-    // TODO: Implement maintenance creation in database
-    return { id: Math.floor(Math.random() * 1000) };
+    const [maintenance] = await db
+      .insert(schema.maintenance)
+      .values({
+        workspaceId,
+        pageId: data.pageId,
+        title: data.title || data.name,
+        message: data.description || "",
+        from: data.scheduledStart || data.from || new Date(),
+        to: data.scheduledEnd || data.to || new Date(),
+      })
+      .returning({ id: schema.maintenance.id });
+    
+    return { id: maintenance.id };
   }
 }
