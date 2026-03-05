@@ -1,0 +1,32 @@
+{
+  "page": {
+    "name": "title",
+    "page_description": "description",
+    "subdomain": { "field": "slug", "transform": "sanitize_slug" },
+    "domain": "customDomain"
+  },
+  "componentGroup": {
+    "name": "name"
+  },
+  "component": {
+    "name": "name",
+    "description": "description"
+  },
+  "incident": {
+    "name": "title",
+    "status": { "field": "status", "transform": "map_status" }
+  },
+  "incidentUpdate": {
+    "body": "message",
+    "display_at": "date",
+    "status": { "field": "status", "transform": "map_status" }
+  },
+  "scheduledMaintenance": {
+    "name": "title",
+    "scheduled_for": "from",
+    "scheduled_until": "to"
+  },
+  "subscriber": {
+    "email": "email"
+  }
+}

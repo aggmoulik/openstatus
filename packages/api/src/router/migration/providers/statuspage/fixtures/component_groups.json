@@ -1,0 +1,18 @@
+[
+  {
+    "id": "group-1",
+    "page_id": "page-1",
+    "name": "API Services",
+    "components": ["comp-1", "comp-2"],
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "group-2",
+    "page_id": "page-1",
+    "name": "Web Platform",
+    "components": ["comp-3"],
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  }
+]

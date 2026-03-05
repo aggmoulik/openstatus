@@ -1,0 +1,9 @@
+{
+  "id": "page-1",
+  "name": "Acme Status Page",
+  "subdomain": "acme-test",
+  "domain": "status.acme.com",
+  "page_description": "We are always online",
+  "created_at": "2024-01-01T00:00:00Z",
+  "updated_at": "2024-01-01T00:00:00Z"
+}

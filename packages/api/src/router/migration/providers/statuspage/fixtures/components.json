@@ -1,0 +1,46 @@
+[
+  {
+    "id": "comp-1",
+    "page_id": "page-1",
+    "group_id": "group-1",
+    "name": "REST API",
+    "description": "Public REST API",
+    "position": 1,
+    "status": "operational",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "comp-2",
+    "page_id": "page-1",
+    "group_id": "group-1",
+    "name": "WebSockets",
+    "description": "Real-time updates",
+    "position": 2,
+    "status": "operational",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "comp-3",
+    "page_id": "page-1",
+    "group_id": "group-2",
+    "name": "Marketing Site",
+    "description": "Main website",
+    "position": 1,
+    "status": "operational",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "comp-4",
+    "page_id": "page-1",
+    "group_id": null,
+    "name": "Database",
+    "description": "Core storage",
+    "position": 4,
+    "status": "operational",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  }
+]

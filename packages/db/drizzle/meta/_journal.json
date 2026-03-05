@@ -393,6 +393,13 @@
       "when": 1769675142003,
       "tag": "0055_spicy_bastion",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "6",
+      "when": 1772371710173,
+      "tag": "0056_daily_lady_vermin",
+      "breakpoints": true
     }
   ]
 }
