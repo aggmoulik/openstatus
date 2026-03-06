@@ -6,7 +6,6 @@ import {
   text,
 } from "drizzle-orm/sqlite-core";
 
-import type { AdapterAccountType } from "next-auth/adapters";
 
 export const viewer = sqliteTable("viewer", {
   id: integer("id").primaryKey(),
@@ -36,7 +35,7 @@ export const viewerAccounts = sqliteTable(
     userId: text("user_id")
       .notNull()
       .references(() => viewer.id, { onDelete: "cascade" }),
-    type: text("type").$type<AdapterAccountType>().notNull(),
+    type: text("type").$type<"oauth" | "oidc" | "email" | "credentials">().notNull(),
     provider: text("provider").notNull(),
     providerAccountId: text("providerAccountId").notNull(),
     refresh_token: text("refresh_token"),

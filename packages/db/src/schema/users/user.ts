@@ -5,7 +5,6 @@ import {
   sqliteTable,
   text,
 } from "drizzle-orm/sqlite-core";
-import type { AdapterAccount } from "next-auth/adapters";
 
 import { workspace, workspaceRole } from "../workspaces";
 
@@ -77,7 +76,7 @@ export const account = sqliteTable(
     userId: integer("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
-    type: text("type").$type<AdapterAccount["type"]>().notNull(),
+    type: text("type").$type<"oauth" | "oidc" | "email" | "credentials">().notNull(),
     provider: text("provider").notNull(),
     providerAccountId: text("provider_account_id").notNull(),
     refresh_token: text("refresh_token"),
