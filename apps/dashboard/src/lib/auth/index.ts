@@ -1,124 +1,131 @@
-import type { DefaultSession } from "next-auth";
-import NextAuth from "next-auth";
+import { betterAuth } from "better-auth";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { nextCookies } from "better-auth/next-js";
 
 import { Events, setupAnalytics } from "@openstatus/analytics";
-import { db, eq } from "@openstatus/db";
-import { user } from "@openstatus/db/src/schema";
-
+import { db } from "@openstatus/db";
+import {
+  account,
+  session,
+  user,
+  verificationToken,
+} from "@openstatus/db/src/schema";
 import { WelcomeEmail, sendEmail } from "@openstatus/emails";
 import { headers } from "next/headers";
-import { adapter } from "./adapter";
-import { GitHubProvider, GoogleProvider, ResendProvider } from "./providers";
 
-export type { DefaultSession };
+import { createWorkspaceForUser } from "./helpers";
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
-  // debug: true,
-  adapter,
-  providers:
-    process.env.NODE_ENV === "development" || process.env.SELF_HOST === "true"
-      ? [GitHubProvider, GoogleProvider, ResendProvider]
-      : [GitHubProvider, GoogleProvider],
-  callbacks: {
-    async signIn(params) {
-      // We keep updating the user info when we loggin in
-
-      if (params.account?.provider === "google") {
-        if (!params.profile) return true;
-        if (Number.isNaN(Number(params.user.id))) return true;
-
-        await db
-          .update(user)
-          .set({
-            firstName: params.profile.given_name,
-            lastName: params.profile.family_name || "",
-            photoUrl: params.profile.picture,
-            // keep the name in sync
-            name: `${params.profile.given_name} ${
-              params.profile.family_name || ""
-            }`.trim(),
-            updatedAt: new Date(),
-          })
-          .where(eq(user.id, Number(params.user.id)))
-          .run();
-      }
-      if (params.account?.provider === "github") {
-        if (!params.profile) return true;
-        if (Number.isNaN(Number(params.user.id))) return true;
-
-        await db
-          .update(user)
-          .set({
-            name: params.profile.name,
-            photoUrl: String(params.profile.avatar_url),
-            updatedAt: new Date(),
-          })
-          .where(eq(user.id, Number(params.user.id)))
-          .run();
-      }
-
-      // REMINDER: only used in dev mode
-      if (params.account?.provider === "resend") {
-        if (Number.isNaN(Number(params.user.id))) return true;
-        await db
-          .update(user)
-          .set({ updatedAt: new Date() })
-          .where(eq(user.id, Number(params.user.id)))
-          .run();
-      }
-
-      return true;
+export const auth = betterAuth({
+  database: drizzleAdapter(db, {
+    provider: "sqlite",
+    schema: {
+      user,
+      session,
+      account,
+      verification: verificationToken,
     },
-    async session(params) {
-      return params.session;
+  }),
+  socialProviders: {
+    github: {
+      clientId: process.env.AUTH_GITHUB_ID!,
+      clientSecret: process.env.AUTH_GITHUB_SECRET!,
+    },
+    google: {
+      clientId: process.env.AUTH_GOOGLE_ID!,
+      clientSecret: process.env.AUTH_GOOGLE_SECRET!,
     },
   },
-  events: {
-    // That should probably done in the callback method instead
-    async createUser(params) {
-      if (!params.user.id || !params.user.email) {
-        throw new Error("User id & email is required");
-      }
-
-      // this means the user has already been created with clerk
-      if (params.user.tenantId) return;
-
-      await sendEmail({
-        from: "Thibault from OpenStatus <thibault@openstatus.dev>",
-        subject: "Welcome to OpenStatus.",
-        to: [params.user.email],
-        react: WelcomeEmail(),
-      });
-
-      const analytics = await setupAnalytics({
-        userId: `usr_${params.user.id}`,
-        email: params.user.email,
-        location: (await headers()).get("x-forwarded-for") ?? undefined,
-        userAgent: (await headers()).get("user-agent") ?? undefined,
-      });
-
-      await analytics.track(Events.CreateUser);
+  secret: process.env.AUTH_SECRET,
+  basePath: "/api/auth",
+  user: {
+    modelName: "user",
+    fields: {
+      image: "photo_url",
+      createdAt: "created_at",
+      updatedAt: "updated_at",
     },
-
-    async signIn(params) {
-      if (params.isNewUser) return;
-      if (!params.user.id || !params.user.email) return;
-
-      const analytics = await setupAnalytics({
-        userId: `usr_${params.user.id}`,
-        email: params.user.email,
-        location: (await headers()).get("x-forwarded-for") ?? undefined,
-        userAgent: (await headers()).get("user-agent") ?? undefined,
-      });
-
-      await analytics.track(Events.SignInUser);
+    additionalFields: {
+      firstName: {
+        type: "string",
+        required: false,
+        defaultValue: "",
+        fieldName: "first_name",
+      },
+      lastName: {
+        type: "string",
+        required: false,
+        defaultValue: "",
+        fieldName: "last_name",
+      },
+      tenantId: {
+        type: "string",
+        required: false,
+        fieldName: "tenant_id",
+      },
     },
   },
-  pages: {
-    signIn: "/login",
-    newUser: "/onboarding",
+  session: {
+    modelName: "session",
+    fields: {
+      token: "session_token",
+      userId: "user_id",
+      expiresAt: "expires",
+    },
   },
-  // basePath: "/api/auth", // default is `/api/auth`
-  // secret: process.env.AUTH_SECRET, // default is `AUTH_SECRET`
-  debug: process.env.NODE_ENV === "development",
+  account: {
+    modelName: "account",
+    fields: {
+      userId: "user_id",
+      accountId: "provider_account_id",
+      providerId: "provider",
+      accessToken: "access_token",
+      refreshToken: "refresh_token",
+      accessTokenExpiresAt: "expires_at",
+      idToken: "id_token",
+    },
+  },
+  advanced: {
+    database: {
+      generateId: false,
+    },
+  },
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (user) => {
+          // Create workspace for new user
+          await createWorkspaceForUser(user.id);
+
+          // Send welcome email
+          if (user.email) {
+            await sendEmail({
+              from: "Thibault from OpenStatus <thibault@openstatus.dev>",
+              subject: "Welcome to OpenStatus.",
+              to: [user.email],
+              react: WelcomeEmail(),
+            });
+          }
+
+          // Track analytics
+          if (user.id && user.email) {
+            try {
+              const h = await headers();
+              const analytics = await setupAnalytics({
+                userId: `usr_${user.id}`,
+                email: user.email,
+                location: h.get("x-forwarded-for") ?? undefined,
+                userAgent: h.get("user-agent") ?? undefined,
+              });
+              await analytics.track(Events.CreateUser);
+            } catch {
+              // headers() may not be available in all contexts
+            }
+          }
+        },
+      },
+    },
+  },
+  plugins: [nextCookies()],
 });
+
+export type Session = typeof auth.$Infer.Session;
