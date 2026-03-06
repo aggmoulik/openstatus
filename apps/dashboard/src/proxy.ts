@@ -1,12 +1,12 @@
-import { NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
+import { headers } from "next/headers";
 
 import { auth } from "@/lib/auth";
-
 import { db, eq } from "@openstatus/db";
 import { user, usersToWorkspaces, workspace } from "@openstatus/db/src/schema";
 import { getCurrency } from "@openstatus/db/src/schema/plan/utils";
 
-export default auth(async (req) => {
+export default async function middleware(req: NextRequest) {
   const url = req.nextUrl.clone();
   const response = NextResponse.next();
 
@@ -17,11 +17,15 @@ export default auth(async (req) => {
   // NOTE: used in the pricing table to display the currency based on user's location
   response.cookies.set("x-currency", currency);
 
-  if (url.pathname.includes("api/trpc")) {
+  if (url.pathname.includes("api/trpc") || url.pathname.includes("api/auth")) {
     return response;
   }
 
-  if (!req.auth && url.pathname !== "/login") {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session && url.pathname !== "/login") {
     console.log("User not authenticated, redirecting to login");
     const newURL = new URL("/login", req.url);
     const encodedSearchParams = `${url.pathname}${url.search}`;
@@ -33,7 +37,7 @@ export default auth(async (req) => {
     return NextResponse.redirect(newURL);
   }
 
-  if (req.auth && url.pathname === "/login") {
+  if (session && url.pathname === "/login") {
     const redirectTo = url.searchParams.get("redirectTo");
     console.log("User authenticated, redirecting to", redirectTo);
     if (redirectTo) {
@@ -44,28 +48,28 @@ export default auth(async (req) => {
 
   const hasWorkspaceSlug = req.cookies.has("workspace-slug");
 
-  if (req.auth?.user?.id && !hasWorkspaceSlug) {
+  if (session?.user?.id && !hasWorkspaceSlug) {
     const [query] = await db
       .select()
       .from(usersToWorkspaces)
       .innerJoin(user, eq(user.id, usersToWorkspaces.userId))
       .innerJoin(workspace, eq(workspace.id, usersToWorkspaces.workspaceId))
-      .where(eq(user.id, Number.parseInt(req.auth.user.id)))
+      .where(eq(user.id, Number(session.user.id)))
       .all();
 
     if (!query) {
       console.error(">> Should not happen, no workspace found for user");
+    } else {
+      response.cookies.set("workspace-slug", query.workspace.slug);
     }
-
-    response.cookies.set("workspace-slug", query.workspace.slug);
   }
 
-  if (!req.auth && hasWorkspaceSlug) {
+  if (!session && hasWorkspaceSlug) {
     response.cookies.delete("workspace-slug");
   }
 
   return response;
-});
+}
 
 export const config = {
   matcher: [

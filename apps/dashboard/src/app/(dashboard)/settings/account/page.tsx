@@ -26,7 +26,7 @@ import { Button } from "@openstatus/ui/components/ui/button";
 import { Input } from "@openstatus/ui/components/ui/input";
 import { Label } from "@openstatus/ui/components/ui/label";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { signOut } from "next-auth/react";
+import { signOut } from "@/lib/auth/client";
 
 export default function Page() {
   const trpc = useTRPC();
@@ -120,7 +120,13 @@ export default function Page() {
               confirmationValue={user.email || user.name || "delete-account"}
               submitAction={async () => {
                 await deleteAccountMutation.mutateAsync();
-                await signOut({ redirectTo: "/" });
+                await signOut({
+                  fetchOptions: {
+                    onSuccess: () => {
+                      window.location.href = "/";
+                    },
+                  },
+                });
               }}
             >
               <Button

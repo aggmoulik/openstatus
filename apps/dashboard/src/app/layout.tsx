@@ -3,12 +3,10 @@ import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import { TailwindIndicator } from "@/components/tailwind-indicator";
 import { ThemeProvider } from "@/components/theme-provider";
-import { auth } from "@/lib/auth";
 import { TRPCReactProvider } from "@/lib/trpc/client";
 import { OpenPanelComponent } from "@openpanel/nextjs";
 import { Toaster } from "@openstatus/ui/components/ui/sonner";
 import { cn } from "@openstatus/ui/lib/utils";
-import { SessionProvider } from "next-auth/react";
 import LocalFont from "next/font/local";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { ogMetadata, twitterMetadata } from "./metadata";
@@ -77,8 +75,6 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await auth();
-
   return (
     <html lang="en" suppressHydrationWarning>
       <body
@@ -91,31 +87,29 @@ export default async function RootLayout({
           "font-sans antialiased ",
         )}
       >
-        <SessionProvider session={session}>
-          <TRPCReactProvider>
-            <NuqsAdapter>
-              <ThemeProvider
-                attribute="class"
-                defaultTheme="system"
-                enableSystem
-                disableTransitionOnChange
-              >
-                {children}
-                <TailwindIndicator />
-                <Toaster richColors expand />
-                {process.env.NEXT_PUBLIC_OPENPANEL_CLIENT_ID && (
-                  <OpenPanelComponent
-                    clientId={process.env.NEXT_PUBLIC_OPENPANEL_CLIENT_ID}
-                    trackScreenViews
-                    trackOutgoingLinks
-                    trackAttributes
-                    sessionReplay={{ enabled: true }}
-                  />
-                )}
-              </ThemeProvider>
-            </NuqsAdapter>
-          </TRPCReactProvider>
-        </SessionProvider>
+        <TRPCReactProvider>
+          <NuqsAdapter>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              {children}
+              <TailwindIndicator />
+              <Toaster richColors expand />
+              {process.env.NEXT_PUBLIC_OPENPANEL_CLIENT_ID && (
+                <OpenPanelComponent
+                  clientId={process.env.NEXT_PUBLIC_OPENPANEL_CLIENT_ID}
+                  trackScreenViews
+                  trackOutgoingLinks
+                  trackAttributes
+                  sessionReplay={{ enabled: true }}
+                />
+              )}
+            </ThemeProvider>
+          </NuqsAdapter>
+        </TRPCReactProvider>
       </body>
     </html>
   );

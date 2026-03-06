@@ -1,19 +1,17 @@
-import Link from "next/link";
+"use client";
 
-import { signIn } from "@/lib/auth";
-import { GitHubIcon } from "@openstatus/icons";
-import { GoogleIcon } from "@openstatus/icons";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+
+import { signIn } from "@/lib/auth/client";
+import { GitHubIcon, GoogleIcon } from "@openstatus/icons";
 import { Button } from "@openstatus/ui/components/ui/button";
 import { Separator } from "@openstatus/ui/components/ui/separator";
-import type { SearchParams } from "nuqs/server";
 import MagicLinkForm from "./_components/magic-link-form";
-import { searchParamsCache } from "./search-params";
 
-export default async function Page(props: {
-  searchParams: Promise<SearchParams>;
-}) {
-  const searchParams = await props.searchParams;
-  const { redirectTo } = searchParamsCache.parse(searchParams);
+export default function Page() {
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirectTo");
 
   return (
     <div className="my-4 grid w-full max-w-lg gap-6">
@@ -24,35 +22,35 @@ export default async function Page(props: {
         </p>
       </div>
       <div className="grid gap-3 p-4">
-        {process.env.NODE_ENV === "development" ||
-        process.env.SELF_HOST === "true" ? (
+        {process.env.NEXT_PUBLIC_SELF_HOST === "true" ? (
           <div className="grid gap-3">
             <MagicLinkForm />
             <Separator />
           </div>
         ) : null}
-        <form
-          action={async () => {
-            "use server";
-            await signIn("github", { redirectTo: redirectTo ?? undefined });
-          }}
+        <Button
+          onClick={() =>
+            signIn.social({
+              provider: "github",
+              callbackURL: redirectTo ?? "/",
+            })
+          }
           className="w-full"
         >
-          <Button type="submit" className="w-full">
-            Sign in with GitHub <GitHubIcon className="ml-2 h-4 w-4" />
-          </Button>
-        </form>
-        <form
-          action={async () => {
-            "use server";
-            await signIn("google", { redirectTo: redirectTo ?? undefined });
-          }}
+          Sign in with GitHub <GitHubIcon className="ml-2 h-4 w-4" />
+        </Button>
+        <Button
+          onClick={() =>
+            signIn.social({
+              provider: "google",
+              callbackURL: redirectTo ?? "/",
+            })
+          }
           className="w-full"
+          variant="outline"
         >
-          <Button type="submit" className="w-full" variant="outline">
-            Sign in with Google <GoogleIcon className="ml-2 h-4 w-4" />
-          </Button>
-        </form>
+          Sign in with Google <GoogleIcon className="ml-2 h-4 w-4" />
+        </Button>
       </div>
       <p className="px-8 text-center text-muted-foreground text-sm">
         By clicking continue, you agree to our{" "}

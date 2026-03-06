@@ -37,7 +37,7 @@ import {
   DropdownMenuTrigger,
 } from "@openstatus/ui/components/ui/dropdown-menu";
 import { useQuery } from "@tanstack/react-query";
-import { signOut } from "next-auth/react";
+import { signOut } from "@/lib/auth/client";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 

@@ -13,7 +13,11 @@ const handler = (req: NextRequest) =>
     endpoint: "/api/trpc/lambda",
     router: lambdaRouter,
     req: req,
-    createContext: () => createTRPCContext({ req, auth }),
+    createContext: () =>
+      createTRPCContext({
+        req,
+        getSession: () => auth.api.getSession({ headers: req.headers }),
+      }),
     onError: ({ error }) => {
       console.log("Error in tRPC handler (lambda)");
       console.error(error);
