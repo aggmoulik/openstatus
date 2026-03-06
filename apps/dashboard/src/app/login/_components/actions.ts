@@ -1,13 +1,13 @@
 "use server";
 
 import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 
 export async function signInWithResendAction(formData: FormData) {
   try {
     const email = formData.get("email") as string;
-    // TODO: magic link sign-in requires the magic-link plugin for better-auth
-    // For now, this is only used in self-hosted/dev mode
-    await auth.api.signInEmail({
+    await auth.api.signInMagicLink({
+      headers: await headers(),
       body: { email, callbackURL: "/" },
     });
   } catch (e) {

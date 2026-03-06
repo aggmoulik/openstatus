@@ -17,9 +17,7 @@ beforeEach(async () => {
 describe("createUser", () => {
   it("creates a user with provided email and name", async () => {
     const result = await createUser({
-      id: "temp",
       email: "alice@example.com",
-      emailVerified: null,
       name: "Alice Smith",
       firstName: "Alice",
       lastName: "Smith",
@@ -36,9 +34,7 @@ describe("createUser", () => {
 
   it("creates a workspace and links user as owner", async () => {
     const result = await createUser({
-      id: "temp",
       email: "bob@example.com",
-      emailVerified: null,
       name: "Bob",
     });
 
@@ -51,7 +47,6 @@ describe("createUser", () => {
     expect(links).toHaveLength(1);
     expect(links[0].role).toBe("owner");
 
-    // Verify the workspace was created
     const ws = await db
       .select()
       .from(workspace)
@@ -65,16 +60,12 @@ describe("createUser", () => {
 
   it("generates unique workspace slugs for different users", async () => {
     const user1 = await createUser({
-      id: "temp1",
       email: "user1@example.com",
-      emailVerified: null,
       name: "User 1",
     });
 
     const user2 = await createUser({
-      id: "temp2",
       email: "user2@example.com",
-      emailVerified: null,
       name: "User 2",
     });
 
@@ -102,7 +93,6 @@ describe("createUser", () => {
       .where(eq(workspace.id, links2[0].workspaceId))
       .get();
 
-    // Each user should have their own workspace with a unique slug
     expect(ws1!.id).not.toBe(ws2!.id);
   });
 });
@@ -110,9 +100,7 @@ describe("createUser", () => {
 describe("getUser", () => {
   it("returns user by string id", async () => {
     const created = await createUser({
-      id: "temp",
       email: "findme@example.com",
-      emailVerified: null,
       name: "Find Me",
     });
 
