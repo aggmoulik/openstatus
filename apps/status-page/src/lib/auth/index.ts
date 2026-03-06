@@ -1,66 +1,119 @@
-import type { DefaultSession } from "next-auth";
-import NextAuth, { AuthError } from "next-auth";
+import { betterAuth } from "better-auth";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { nextCookies } from "better-auth/next-js";
+import { magicLink } from "better-auth/plugins/magic-link";
 
 import { db, eq } from "@openstatus/db";
-import { viewer } from "@openstatus/db/src/schema";
+import {
+  verificationToken,
+  viewer,
+  viewerAccounts,
+  viewerSession,
+} from "@openstatus/db/src/schema";
+import { EmailClient } from "@openstatus/emails";
 
 import { getValidCustomDomain } from "@/lib/domain";
 import { getQueryClient, trpc } from "@/lib/trpc/server";
-import { headers } from "next/headers";
-import { adapter } from "./adapter";
-import { ResendProvider } from "./providers";
 
-export type { DefaultSession };
-
-export const { handlers, signIn, signOut, auth } = NextAuth({
-  debug: process.env.NODE_ENV === "development",
-  adapter,
-  providers: [ResendProvider],
-  callbacks: {
-    async signIn(params) {
-      const _headers = await headers();
-      const host = _headers.get("host");
-
-      if (!host) throw new AuthError("No host found");
-
-      const protocol = _headers.get("x-forwarded-proto") || "https";
-      const req = new Request(`${protocol}://${host}`, {
-        headers: new Headers(_headers),
-      });
-      const { prefix } = getValidCustomDomain(req);
-
-      if (!prefix || !params.user.email) return false;
-
-      const queryClient = getQueryClient();
-      // NOTE: throws an error if the email domain is not allowed
-      const query = await queryClient.fetchQuery(
-        trpc.statusPage.validateEmailDomain.queryOptions({
-          slug: prefix,
-          email: params.user.email,
-        }),
-      );
-
-      if (!query) return false;
-
-      if (params.account?.provider === "resend") {
-        // if the user is new, the id is the verification_token and not the viewer id, so we cannot update the viewer
-        if (Number.isNaN(Number(params.user.id))) return true;
-        await db
-          .update(viewer)
-          .set({ updatedAt: new Date() })
-          .where(eq(viewer.id, Number(params.user.id)))
-          .run();
-
-        return true;
-      }
-
-      return false;
+export const auth = betterAuth({
+  database: drizzleAdapter(db, {
+    provider: "sqlite",
+    schema: {
+      user: viewer,
+      session: viewerSession,
+      account: viewerAccounts,
+      verification: verificationToken,
     },
-    redirect: async (params) => {
-      return params.url;
+  }),
+  secret: process.env.AUTH_SECRET,
+  basePath: "/api/auth",
+  user: {
+    modelName: "viewer",
+    fields: {
+      createdAt: "created_at",
+      updatedAt: "updated_at",
     },
-    async session(params) {
-      return params.session;
+  },
+  session: {
+    modelName: "viewer_session",
+    fields: {
+      token: "session_token",
+      userId: "user_id",
+      expiresAt: "expires",
+    },
+  },
+  account: {
+    modelName: "viewer_accounts",
+    fields: {
+      userId: "user_id",
+      accountId: "providerAccountId",
+      providerId: "provider",
+      accessToken: "access_token",
+      refreshToken: "refresh_token",
+      accessTokenExpiresAt: "expires_at",
+      idToken: "id_token",
+    },
+  },
+  advanced: {
+    database: {
+      generateId: false,
+    },
+  },
+  plugins: [
+    nextCookies(),
+    magicLink({
+      sendMagicLink: async ({ email, url, token }, ctx) => {
+        const emailClient = new EmailClient({
+          apiKey: process.env.RESEND_API_KEY ?? "",
+        });
+
+        // Extract the domain/prefix from the request headers
+        const reqHeaders = ctx?.headers;
+        if (!reqHeaders) return;
+
+        const host = reqHeaders.get("host");
+        if (!host) return;
+
+        const protocol = reqHeaders.get("x-forwarded-proto") || "https";
+        const req = new Request(`${protocol}://${host}`, {
+          headers: new Headers(reqHeaders),
+        });
+        const { prefix } = getValidCustomDomain(req);
+
+        if (!prefix) return;
+
+        const queryClient = getQueryClient();
+        const query = await queryClient.fetchQuery(
+          trpc.statusPage.validateEmailDomain.queryOptions({
+            slug: prefix,
+            email,
+          }),
+        );
+
+        if (!query) return;
+
+        await emailClient.sendStatusPageMagicLink({
+          page: query.page.title,
+          link: url,
+          to: email,
+        });
+      },
+    }),
+  ],
+  databaseHooks: {
+    user: {
+      update: {
+        before: async (user) => {
+          return {
+            data: {
+              ...user,
+              updatedAt: new Date(),
+            },
+          };
+        },
+      },
     },
   },
 });
+
+export type Session = typeof auth.$Infer.Session;

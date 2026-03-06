@@ -1,10 +1,10 @@
 "use server";
 
-import { signIn } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { getQueryClient, trpc } from "@/lib/trpc/server";
 import { TRPCClientError } from "@trpc/client";
-import { AuthError } from "next-auth";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
+import { headers } from "next/headers";
 
 export async function signInWithResendAction(formData: FormData) {
   try {
@@ -42,9 +42,13 @@ export async function signInWithResendAction(formData: FormData) {
       };
     }
 
-    await signIn("resend", {
-      email,
-      redirectTo,
+    const reqHeaders = await headers();
+    await auth.api.signInMagicLink({
+      headers: reqHeaders,
+      body: {
+        email,
+        callbackURL: redirectTo,
+      },
     });
 
     return { success: true };
@@ -54,9 +58,6 @@ export async function signInWithResendAction(formData: FormData) {
       return { success: true };
     }
     console.error("[SignIn] Error:", e);
-    if (e instanceof AuthError) {
-      return { success: false, error: e.type };
-    }
     if (e instanceof Error) {
       return { success: false, error: e.message };
     }

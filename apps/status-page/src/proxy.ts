@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
 
@@ -7,7 +7,7 @@ import { page, selectPageSchema } from "@openstatus/db/src/schema";
 import { getValidSubdomain } from "./lib/domain";
 import { createProtectedCookieKey } from "./lib/protected";
 
-export default auth(async (req) => {
+export default async function middleware(req: NextRequest) {
   const url = req.nextUrl.clone();
   const response = NextResponse.next();
   const cookies = req.cookies;
@@ -119,7 +119,10 @@ export default auth(async (req) => {
 
   if (_page.accessType === "email-domain") {
     const { origin, pathname } = req.nextUrl;
-    const email = req.auth?.user?.email;
+    const session = await auth.api.getSession({
+      headers: req.headers,
+    });
+    const email = session?.user?.email;
     const emailDomain = email?.split("@")[1];
     if (
       !pathname.endsWith("/login") &&
@@ -166,8 +169,6 @@ export default auth(async (req) => {
     }
     if (_page.customDomain && subdomain) {
       console.log({ url: req.url });
-      // const vercelURL = process.env.VERCEL_URL || "www.stpg.dev";
-      // console.log({newUrl: vercelURL})
       if (pathnames.length > 2) {
         const pathname = pathnames.slice(1).join("/");
 
@@ -199,7 +200,7 @@ export default auth(async (req) => {
     return NextResponse.rewrite(rewriteUrl);
   }
   return response;
-});
+}
 
 export const config = {
   matcher: [

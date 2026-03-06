@@ -26,7 +26,9 @@ export async function GET(
     }
 
     if (_page.accessType === "email-domain") {
-      const session = await auth();
+      const session = await auth.api.getSession({
+        headers: new Headers(_request.headers),
+      });
       const user = session?.user;
       const allowedDomains = _page.authEmailDomains ?? [];
       if (!user || !user.email) return unauthorized();
