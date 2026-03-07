@@ -3,7 +3,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 import { magicLink } from "better-auth/plugins/magic-link";
 
-import { db, eq } from "@openstatus/db";
+import { db } from "@openstatus/db";
 import {
   verificationToken,
   viewer,
@@ -29,29 +29,19 @@ export const auth = betterAuth({
   basePath: "/api/auth",
   user: {
     modelName: "viewer",
-    fields: {
-      createdAt: "created_at",
-      updatedAt: "updated_at",
-    },
   },
   session: {
     modelName: "viewer_session",
     fields: {
       token: "session_token",
-      userId: "user_id",
-      expiresAt: "expires",
     },
   },
   account: {
     modelName: "viewer_accounts",
     fields: {
-      userId: "user_id",
       accountId: "providerAccountId",
       providerId: "provider",
-      accessToken: "access_token",
-      refreshToken: "refresh_token",
       accessTokenExpiresAt: "expires_at",
-      idToken: "id_token",
     },
   },
   advanced: {

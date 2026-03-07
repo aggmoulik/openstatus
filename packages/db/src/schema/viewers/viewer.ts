@@ -1,54 +1,70 @@
 import { sql } from "drizzle-orm";
-import {
-  integer,
-  primaryKey,
-  sqliteTable,
-  text,
-} from "drizzle-orm/sqlite-core";
-
+import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const viewer = sqliteTable("viewer", {
-  id: integer("id").primaryKey(),
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
   name: text("name"),
   email: text("email").unique(),
-  emailVerified: integer("emailVerified", { mode: "timestamp" }),
+  emailVerified: integer("emailVerified", { mode: "boolean" }).default(false),
   image: text("image"),
-  createdAt: integer("created_at", { mode: "timestamp" }).default(
-    sql`(strftime('%s', 'now'))`,
-  ),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).default(
-    sql`(strftime('%s', 'now'))`,
-  ),
+  createdAt: integer("created_at", { mode: "timestamp_ms" })
+    .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+    .notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+    .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+    .$onUpdate(() => new Date())
+    .notNull(),
 });
 
-export const viewerSession = sqliteTable("viewer_session", {
-  sessionToken: text("session_token").primaryKey(),
-  userId: integer("user_id")
-    .notNull()
-    .references(() => viewer.id, { onDelete: "cascade" }),
-  expires: integer("expires", { mode: "timestamp_ms" }).notNull(),
-});
-
-export const viewerAccounts = sqliteTable(
-  "viewer_accounts",
+export const viewerSession = sqliteTable(
+  "viewer_session",
   {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    token: text("session_token").notNull().unique(),
     userId: text("user_id")
       .notNull()
       .references(() => viewer.id, { onDelete: "cascade" }),
-    type: text("type").$type<"oauth" | "oidc" | "email" | "credentials">().notNull(),
-    provider: text("provider").notNull(),
-    providerAccountId: text("providerAccountId").notNull(),
-    refresh_token: text("refresh_token"),
-    access_token: text("access_token"),
-    expires_at: integer("expires_at"),
-    token_type: text("token_type"),
-    scope: text("scope"),
-    id_token: text("id_token"),
-    session_state: text("session_state"),
+    expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+      .notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+      .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+      .$onUpdate(() => new Date())
+      .notNull(),
   },
-  (account) => [
-    primaryKey({
-      columns: [account.provider, account.providerAccountId],
-    }),
-  ],
+  (table) => [index("viewer_session_user_id_idx").on(table.userId)],
 );
+
+export const viewerAccounts = sqliteTable("viewer_accounts", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id")
+    .notNull()
+    .references(() => viewer.id, { onDelete: "cascade" }),
+  accountId: text("providerAccountId").notNull(),
+  providerId: text("provider").notNull(),
+  accessToken: text("access_token"),
+  refreshToken: text("refresh_token"),
+  accessTokenExpiresAt: integer("expires_at", { mode: "timestamp_ms" }),
+  refreshTokenExpiresAt: integer("refresh_token_expires_at", {
+    mode: "timestamp_ms",
+  }),
+  scope: text("scope"),
+  idToken: text("id_token"),
+  password: text("password"),
+  createdAt: integer("created_at", { mode: "timestamp_ms" })
+    .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+    .notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+    .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+    .$onUpdate(() => new Date())
+    .notNull(),
+});

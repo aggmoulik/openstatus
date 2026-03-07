@@ -1,5 +1,5 @@
-import { type NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
+import { type NextRequest, NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
 import { db, eq } from "@openstatus/db";
@@ -54,7 +54,7 @@ export default async function middleware(req: NextRequest) {
       .from(usersToWorkspaces)
       .innerJoin(user, eq(user.id, usersToWorkspaces.userId))
       .innerJoin(workspace, eq(workspace.id, usersToWorkspaces.workspaceId))
-      .where(eq(user.id, Number(session.user.id)))
+      .where(eq(user.id, session.user.id))
       .all();
 
     if (!query) {

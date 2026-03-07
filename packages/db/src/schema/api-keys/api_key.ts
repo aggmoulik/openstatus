@@ -15,7 +15,7 @@ export const apiKey = sqliteTable(
     workspaceId: integer("workspace_id")
       .notNull()
       .references(() => workspace.id, { onDelete: "cascade" }),
-    createdById: integer("created_by_id")
+    createdById: text("created_by_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     createdAt: integer("created_at", { mode: "timestamp" }).default(

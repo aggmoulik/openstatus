@@ -148,7 +148,7 @@ async function main() {
   await db
     .insert(user)
     .values({
-      id: 1,
+      id: "1",
       tenantId: "1",
       firstName: "Speed",
       lastName: "Matters",
@@ -159,7 +159,7 @@ async function main() {
     .run();
   await db
     .insert(usersToWorkspaces)
-    .values({ workspaceId: 1, userId: 1 })
+    .values({ workspaceId: 1, userId: "1" })
     .onConflictDoNothing()
     .run();
 

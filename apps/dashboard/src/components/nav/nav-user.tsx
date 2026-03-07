@@ -17,6 +17,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { signOut } from "@/lib/auth/client";
 import { useTRPC } from "@/lib/trpc/client";
 import {
   Avatar,
@@ -37,7 +38,6 @@ import {
   DropdownMenuTrigger,
 } from "@openstatus/ui/components/ui/dropdown-menu";
 import { useQuery } from "@tanstack/react-query";
-import { signOut } from "@/lib/auth/client";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 

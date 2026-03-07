@@ -42,8 +42,6 @@ export const auth = betterAuth({
     modelName: "user",
     fields: {
       image: "photo_url",
-      createdAt: "created_at",
-      updatedAt: "updated_at",
     },
     additionalFields: {
       firstName: {
@@ -65,24 +63,12 @@ export const auth = betterAuth({
       },
     },
   },
-  session: {
-    modelName: "session",
-    fields: {
-      token: "session_token",
-      userId: "user_id",
-      expiresAt: "expires",
-    },
-  },
   account: {
     modelName: "account",
     fields: {
-      userId: "user_id",
       accountId: "provider_account_id",
       providerId: "provider",
-      accessToken: "access_token",
-      refreshToken: "refresh_token",
       accessTokenExpiresAt: "expires_at",
-      idToken: "id_token",
     },
   },
   advanced: {

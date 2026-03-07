@@ -3,9 +3,7 @@ import * as randomWordSlugs from "random-word-slugs";
 import { db, eq } from "@openstatus/db";
 import { user, usersToWorkspaces, workspace } from "@openstatus/db/src/schema";
 
-export async function createWorkspaceForUser(userId: number | string) {
-  const numericUserId = typeof userId === "string" ? Number(userId) : userId;
-
+export async function createWorkspaceForUser(userId: string) {
   let slug: string | undefined = undefined;
 
   while (!slug) {
@@ -31,7 +29,7 @@ export async function createWorkspaceForUser(userId: number | string) {
   await db
     .insert(usersToWorkspaces)
     .values({
-      userId: numericUserId,
+      userId,
       workspaceId: newWorkspace.id,
       role: "owner",
     })
@@ -53,7 +51,7 @@ export async function createUser(data: {
     .values({
       email: data.email,
       photoUrl: data.image,
-      name: data.name,
+      name: data.name ?? "",
       firstName: data.firstName,
       lastName: data.lastName,
     })
@@ -66,11 +64,7 @@ export async function createUser(data: {
 }
 
 export async function getUser(id: string) {
-  const _user = await db
-    .select()
-    .from(user)
-    .where(eq(user.id, Number(id)))
-    .get();
+  const _user = await db.select().from(user).where(eq(user.id, id)).get();
 
   return _user || null;
 }

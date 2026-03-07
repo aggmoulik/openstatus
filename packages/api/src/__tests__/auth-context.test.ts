@@ -1,4 +1,4 @@
-import { describe, it, expect } from "bun:test";
+import { describe, expect, it } from "bun:test";
 
 import { createInnerTRPCContext } from "../trpc";
 
@@ -23,8 +23,8 @@ describe("createInnerTRPCContext", () => {
     });
 
     expect(ctx.session).not.toBeNull();
-    expect(ctx.session!.user!.id).toBe("1");
-    expect(ctx.session!.user!.email).toBe("user@example.com");
+    expect(ctx.session?.user?.id).toBe("1");
+    expect(ctx.session?.user?.email).toBe("user@example.com");
     expect(ctx.db).toBeDefined();
   });
 
@@ -52,11 +52,11 @@ describe("createInnerTRPCContext", () => {
     });
 
     expect(ctx.workspace).toBeDefined();
-    expect(ctx.workspace!.id).toBe(1);
-    expect(ctx.workspace!.slug).toBe("test-workspace");
+    expect(ctx.workspace?.id).toBe(1);
+    expect(ctx.workspace?.slug).toBe("test-workspace");
     expect(ctx.user).toBeDefined();
-    expect(ctx.user!.id).toBe(1);
-    expect(ctx.user!.email).toBe("user@example.com");
+    expect(ctx.user?.id).toBe(1);
+    expect(ctx.user?.email).toBe("user@example.com");
     expect(ctx.db).toBeDefined();
   });
 });

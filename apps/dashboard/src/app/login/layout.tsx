@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
 import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
 import { AuthLayout } from "@/components/layout/auth-layout";
 import { auth } from "@/lib/auth";

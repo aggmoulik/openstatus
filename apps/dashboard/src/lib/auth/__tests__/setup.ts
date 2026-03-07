@@ -1,11 +1,11 @@
 import { db } from "@openstatus/db";
 import {
-  user,
-  workspace,
-  usersToWorkspaces,
   account,
   session,
+  user,
+  usersToWorkspaces,
   verificationToken,
+  workspace,
 } from "@openstatus/db/src/schema";
 
 export async function cleanupAuthTables() {

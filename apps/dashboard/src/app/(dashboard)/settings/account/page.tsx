@@ -21,12 +21,12 @@ import {
   FormCardFooter,
 } from "@/components/forms/form-card";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { signOut } from "@/lib/auth/client";
 import { useTRPC } from "@/lib/trpc/client";
 import { Button } from "@openstatus/ui/components/ui/button";
 import { Input } from "@openstatus/ui/components/ui/input";
 import { Label } from "@openstatus/ui/components/ui/label";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { signOut } from "@/lib/auth/client";
 
 export default function Page() {
   const trpc = useTRPC();

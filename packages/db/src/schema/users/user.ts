@@ -1,5 +1,6 @@
 import { relations, sql } from "drizzle-orm";
 import {
+  index,
   integer,
   primaryKey,
   sqliteTable,
@@ -9,26 +10,31 @@ import {
 import { workspace, workspaceRole } from "../workspaces";
 
 export const user = sqliteTable("user", {
-  id: integer("id").primaryKey(),
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
 
   // clerk fields
-  tenantId: text("tenant_id", { length: 256 }).unique(), // the clerk User Id
+  tenantId: text("tenant_id", { length: 256 }).unique(),
   firstName: text("first_name").default(""),
   lastName: text("last_name").default(""),
   photoUrl: text("photo_url").default(""),
 
-  // next-auth fields
-  name: text("name"),
-  email: text("email").default(""),
-  emailVerified: integer("emailVerified", { mode: "timestamp_ms" }),
+  // auth fields
+  name: text("name").notNull(),
+  email: text("email").notNull().unique().default(""),
+  emailVerified: integer("emailVerified", { mode: "boolean" })
+    .default(false)
+    .notNull(),
 
-  createdAt: integer("created_at", { mode: "timestamp" }).default(
-    sql`(strftime('%s', 'now'))`,
-  ),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).default(
-    sql`(strftime('%s', 'now'))`,
-  ),
-  deletedAt: integer("deleted_at", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp_ms" })
+    .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+    .notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+    .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+    .$onUpdate(() => new Date())
+    .notNull(),
+  deletedAt: integer("deleted_at", { mode: "timestamp_ms" }),
 });
 
 export const userRelations = relations(user, ({ many }) => ({
@@ -38,7 +44,7 @@ export const userRelations = relations(user, ({ many }) => ({
 export const usersToWorkspaces = sqliteTable(
   "users_to_workspaces",
   {
-    userId: integer("user_id")
+    userId: text("user_id")
       .notNull()
       .references(() => user.id),
     workspaceId: integer("workspace_id")
@@ -49,9 +55,7 @@ export const usersToWorkspaces = sqliteTable(
       sql`(strftime('%s', 'now'))`,
     ),
   },
-  (t) => ({
-    pk: primaryKey({ columns: [t.userId, t.workspaceId] }),
-  }),
+  (t) => [primaryKey({ columns: [t.userId, t.workspaceId] })],
 );
 
 export const usersToWorkspaceRelations = relations(
@@ -68,48 +72,71 @@ export const usersToWorkspaceRelations = relations(
   }),
 );
 
-// NEXT AUTH TABLES
+// BETTER AUTH TABLES
 
-export const account = sqliteTable(
-  "account",
-  {
-    userId: integer("user_id")
-      .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
-    type: text("type").$type<"oauth" | "oidc" | "email" | "credentials">().notNull(),
-    provider: text("provider").notNull(),
-    providerAccountId: text("provider_account_id").notNull(),
-    refresh_token: text("refresh_token"),
-    access_token: text("access_token"),
-    expires_at: integer("expires_at"),
-    token_type: text("token_type"),
-    scope: text("scope"),
-    id_token: text("id_token"),
-    session_state: text("session_state"),
-  },
-  (account) => ({
-    compoundKey: primaryKey({
-      columns: [account.provider, account.providerAccountId],
-    }),
-  }),
-);
-
-export const session = sqliteTable("session", {
-  sessionToken: text("session_token").primaryKey(),
-  userId: integer("user_id")
+export const account = sqliteTable("account", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
-  expires: integer("expires", { mode: "timestamp_ms" }).notNull(),
+  accountId: text("provider_account_id").notNull(),
+  providerId: text("provider").notNull(),
+  accessToken: text("access_token"),
+  refreshToken: text("refresh_token"),
+  accessTokenExpiresAt: integer("expires_at", { mode: "timestamp_ms" }),
+  refreshTokenExpiresAt: integer("refresh_token_expires_at", {
+    mode: "timestamp_ms",
+  }),
+  scope: text("scope"),
+  idToken: text("id_token"),
+  password: text("password"),
+  createdAt: integer("created_at", { mode: "timestamp_ms" })
+    .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+    .notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+    .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+    .$onUpdate(() => new Date())
+    .notNull(),
 });
 
-export const verificationToken = sqliteTable(
-  "verification_token",
+export const session = sqliteTable(
+  "session",
   {
-    identifier: text("identifier").notNull(),
-    token: text("token").notNull(),
-    expires: integer("expires", { mode: "timestamp_ms" }).notNull(),
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    token: text("token").notNull().unique(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+      .notNull(),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+      .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+      .$onUpdate(() => new Date())
+      .notNull(),
   },
-  (vt) => ({
-    compoundKey: primaryKey({ columns: [vt.identifier, vt.token] }),
-  }),
+  (table) => [index("session_user_id_idx").on(table.userId)],
 );
+
+export const verificationToken = sqliteTable("verification_token", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  identifier: text("identifier").notNull(),
+  value: text("value").notNull(),
+  expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" })
+    .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+    .notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+    .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+    .$onUpdate(() => new Date())
+    .notNull(),
+});

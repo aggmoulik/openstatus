@@ -1,0 +1,8 @@
+ What needs manual testing:
+
+  - OAuth flows (GitHub/Google sign-in + callback)
+  - Magic link flow (dev mode)
+  - Session persistence across page navigations
+  - Sign out + redirect
+  - Status page email-domain protected access
+  - DB schema compatibility (run npx @better-auth/cli generate to check if migrations are needed)

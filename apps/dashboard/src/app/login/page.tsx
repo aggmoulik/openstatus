@@ -22,7 +22,8 @@ export default function Page() {
         </p>
       </div>
       <div className="grid gap-3 p-4">
-        {process.env.NEXT_PUBLIC_SELF_HOST === "true" ? (
+        {process.env.NODE_ENV === "development" ||
+        process.env.NEXT_PUBLIC_SELF_HOST === "true" ? (
           <div className="grid gap-3">
             <MagicLinkForm />
             <Separator />

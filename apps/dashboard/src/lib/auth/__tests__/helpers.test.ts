@@ -1,11 +1,7 @@
-import { describe, it, expect, beforeEach } from "bun:test";
+import { beforeEach, describe, expect, it } from "bun:test";
 
 import { db, eq } from "@openstatus/db";
-import {
-  user,
-  workspace,
-  usersToWorkspaces,
-} from "@openstatus/db/src/schema";
+import { usersToWorkspaces, workspace } from "@openstatus/db/src/schema";
 
 import { createUser, getUser } from "../helpers";
 import { cleanupAuthTables } from "./setup";
@@ -54,8 +50,8 @@ describe("createUser", () => {
       .get();
 
     expect(ws).toBeDefined();
-    expect(ws!.slug).toBeString();
-    expect(ws!.slug!.length).toBeGreaterThan(0);
+    expect(ws?.slug).toBeString();
+    expect(ws?.slug?.length).toBeGreaterThan(0);
   });
 
   it("generates unique workspace slugs for different users", async () => {
@@ -93,7 +89,7 @@ describe("createUser", () => {
       .where(eq(workspace.id, links2[0].workspaceId))
       .get();
 
-    expect(ws1!.id).not.toBe(ws2!.id);
+    expect(ws1?.id).not.toBe(ws2?.id);
   });
 });
 
@@ -107,9 +103,9 @@ describe("getUser", () => {
     const found = await getUser(String(created.id));
 
     expect(found).not.toBeNull();
-    expect(found!.id).toBe(created.id);
-    expect(found!.email).toBe("findme@example.com");
-    expect(found!.name).toBe("Find Me");
+    expect(found?.id).toBe(created.id);
+    expect(found?.email).toBe("findme@example.com");
+    expect(found?.name).toBe("Find Me");
   });
 
   it("returns null for non-existent user", async () => {

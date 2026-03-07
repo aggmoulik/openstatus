@@ -98,15 +98,15 @@ app.get("/monitors/:step", async (c) => {
   switch (schema.data) {
     case "14days":
       // We send the first email
-      await Step14Days(Number(userId), Number(initialRun));
+      await Step14Days(String(userId), Number(initialRun));
       break;
     case "3days":
-      await Step3Days(Number(userId), Number(initialRun));
+      await Step3Days(String(userId), Number(initialRun));
       // 3 days before we send the second email
       break;
     case "paused":
       // Let's pause the monitor
-      await StepPaused(Number(userId), Number(initialRun));
+      await StepPaused(String(userId), Number(initialRun));
       break;
     default:
       throw new Error("Invalid step");

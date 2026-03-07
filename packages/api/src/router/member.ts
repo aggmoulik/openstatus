@@ -32,7 +32,7 @@ export const memberRouter = createTRPCRouter({
 
   delete: protectedProcedure
     .meta({ track: Events.RemoveUser })
-    .input(z.object({ id: z.number() }))
+    .input(z.object({ id: z.string() }))
     .mutation(async (opts) => {
       const currentUser = await opts.ctx.db.query.usersToWorkspaces.findFirst({
         where: and(

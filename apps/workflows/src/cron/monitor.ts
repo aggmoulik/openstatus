@@ -91,7 +91,7 @@ export async function LaunchMonitorWorkflow() {
     .select({
       userId: schema.user.id,
       email: schema.user.email,
-      lastConnection: max(schema.session.expires).as("lastConnection"),
+      lastConnection: max(schema.session.expiresAt).as("lastConnection"),
     })
     .from(schema.user)
     .innerJoin(schema.session, eq(schema.session.userId, schema.user.id))
@@ -148,7 +148,7 @@ async function workflowInit({
   user,
 }: {
   user: {
-    userId: number;
+    userId: string;
     email: string | null;
     workspaceId: number;
   };
@@ -186,7 +186,7 @@ async function workflowInit({
   console.log(`user workflow started for ${user.userId}`);
 }
 
-export async function Step14Days(userId: number, workFlowRunTimestamp: number) {
+export async function Step14Days(userId: string, workFlowRunTimestamp: number) {
   const user = await getUser(userId);
 
   // Send email saying we are going to pause the monitors
@@ -219,7 +219,7 @@ export async function Step14Days(userId: number, workFlowRunTimestamp: number) {
   }
 }
 
-export async function Step3Days(userId: number, workFlowRunTimestamp: number) {
+export async function Step3Days(userId: string, workFlowRunTimestamp: number) {
   // check if user has connected
   const hasConnected = await hasUserLoggedIn({
     userId,
@@ -262,7 +262,7 @@ export async function Step3Days(userId: number, workFlowRunTimestamp: number) {
   });
 }
 
-export async function StepPaused(userId: number, workFlowRunTimestamp: number) {
+export async function StepPaused(userId: string, workFlowRunTimestamp: number) {
   const hasConnected = await hasUserLoggedIn({
     userId,
     date: new Date(workFlowRunTimestamp),
@@ -327,14 +327,14 @@ async function hasUserLoggedIn({
   userId,
   date,
 }: {
-  userId: number;
+  userId: string;
   date: Date;
 }) {
   const userResult = await db
-    .select({ lastSession: schema.session.expires })
+    .select({ lastSession: schema.session.expiresAt })
     .from(schema.session)
     .where(eq(schema.session.userId, userId))
-    .orderBy(desc(schema.session.expires));
+    .orderBy(desc(schema.session.expiresAt));
 
   if (userResult.length === 0) {
     return false;
@@ -356,7 +356,7 @@ function CreateTask({
   parent: string;
   client: CloudTasksClient;
   step: z.infer<typeof workflowStepSchema>;
-  userId: number;
+  userId: string;
   initialRun: number;
 }) {
   const url = `https://openstatus-workflows.fly.dev/cron/monitors/${step}?userId=${userId}&initialRun=${initialRun}`;
@@ -398,7 +398,7 @@ function getScheduledTime(step: z.infer<typeof workflowStepSchema>) {
 export const workflowStep = ["14days", "3days", "paused"] as const;
 export const workflowStepSchema = z.enum(workflowStep);
 
-async function getUser(userId: number) {
+async function getUser(userId: string) {
   const currentUser = await db
     .select()
     .from(user)

@@ -154,7 +154,7 @@ const enforceUserIsAuthed = t.middleware(async (opts) => {
   //  * comparing the `user.tenantId` to clerk's `auth.userId`
   //  */
   const userAndWorkspace = await db.query.user.findFirst({
-    where: eq(schema.user.id, Number(ctx.session.user.id)),
+    where: eq(schema.user.id, ctx.session.user.id),
     with: {
       usersToWorkspaces: {
         with: {

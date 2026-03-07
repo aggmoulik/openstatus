@@ -18,7 +18,7 @@ import {
  */
 export async function createApiKey(
   workspaceId: number,
-  createdById: number,
+  createdById: string,
   name: string,
   description?: string,
   expiresAt?: Date,

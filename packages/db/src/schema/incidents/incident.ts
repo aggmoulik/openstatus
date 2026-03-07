@@ -38,11 +38,11 @@ export const incidentTable = sqliteTable(
       .default(sql`(strftime('%s', 'now'))`),
     // Who has acknowledged the incident
     acknowledgedAt: integer("acknowledged_at", { mode: "timestamp" }),
-    acknowledgedBy: integer("acknowledged_by").references(() => user.id),
+    acknowledgedBy: text("acknowledged_by").references(() => user.id),
 
     // Who has resolved it
     resolvedAt: integer("resolved_at", { mode: "timestamp" }),
-    resolvedBy: integer("resolved_by").references(() => user.id),
+    resolvedBy: text("resolved_by").references(() => user.id),
 
     incidentScreenshotUrl: text("incident_screenshot_url"),
     recoveryScreenshotUrl: text("recovery_screenshot_url"),
